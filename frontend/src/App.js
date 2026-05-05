@@ -23,18 +23,30 @@ export default function App() {
   const [searchValue, setSearchValue] = useState('');
 
   const refreshDocuments = useCallback(async () => {
-    const docs = await getDocuments();
-    setDocuments(docs);
+    try {
+      const docs = await getDocuments();
+      setDocuments(docs);
+    } catch {
+      setDocuments([]);
+    }
   }, []);
 
   const refreshSystem = useCallback(async () => {
-    const status = await getSystemStatus();
-    setSystemStatus(status);
+    try {
+      const status = await getSystemStatus();
+      setSystemStatus(status);
+    } catch {
+      setSystemStatus(null);
+    }
   }, []);
 
   const refreshModes = useCallback(async () => {
-    const data = await getModes();
-    setModeData(data);
+    try {
+      const data = await getModes();
+      setModeData(data);
+    } catch {
+      setModeData({ active_mode: 'Balanced', available_modes: ['Performance', 'Balanced', 'Lite'] });
+    }
   }, []);
 
   useEffect(() => {
@@ -46,8 +58,12 @@ export default function App() {
   }, [refreshDocuments, refreshModes, refreshSystem]);
 
   const changeMode = async (mode) => {
-    const next = await updateMode(mode);
-    setModeData(next);
+    try {
+      const next = await updateMode(mode);
+      setModeData(next);
+    } catch {
+      setModeData((prev) => ({ ...prev, active_mode: mode }));
+    }
   };
 
   return (

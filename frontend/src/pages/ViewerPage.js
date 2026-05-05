@@ -6,9 +6,11 @@ const highlightText = (text, highlights) => {
   if (!highlights.length) return text;
   const escaped = highlights.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const pattern = new RegExp(`(${escaped.join('|')})`, 'gi');
-  return text.split(pattern).map((part, index) => (
-    pattern.test(part) ? <mark key={`${part}-${index}`}>{part}</mark> : <span key={`${part}-${index}`}>{part}</span>
-  ));
+  const lowerHighlights = highlights.map((term) => term.toLowerCase());
+  return text.split(pattern).map((part, index) => {
+    const isMatch = lowerHighlights.includes(part.toLowerCase());
+    return isMatch ? <mark key={`${part}-${index}`}>{part}</mark> : <span key={`${part}-${index}`}>{part}</span>;
+  });
 };
 
 export default function ViewerPage() {

@@ -12,27 +12,27 @@ const client = axios.create({
 });
 
 export const getSystemStatus = async () => {
-  const response = await client.get('/api/system/status');
+  const response = await client.get('/system/status');
   return response.data;
 };
 
 export const getModes = async () => {
-  const response = await client.get('/api/modes');
+  const response = await client.get('/modes');
   return response.data;
 };
 
 export const updateMode = async (mode) => {
-  const response = await client.put('/api/modes', { mode });
+  const response = await client.put('/modes', { mode });
   return response.data;
 };
 
 export const getDocuments = async () => {
-  const response = await client.get('/api/documents');
+  const response = await client.get('/documents');
   return response.data;
 };
 
 export const uploadDocuments = async (files, category = 'Lavoro') => {
-  const response = await client.post('/api/documents/upload', {
+  const response = await client.post('/documents/upload', {
     files,
     category,
   });
@@ -40,34 +40,34 @@ export const uploadDocuments = async (files, category = 'Lavoro') => {
 };
 
 export const startIndexing = async (documentIds) => {
-  const response = await client.post('/api/indexing/start', {
+  const response = await client.post('/indexing/start', {
     document_ids: documentIds,
   });
   return response.data;
 };
 
 export const getIndexingStatus = async (jobId) => {
-  const response = await client.get(`/api/indexing/status/${jobId}`);
+  const response = await client.get(`/indexing/status/${jobId}`);
   return response.data;
 };
 
 export const pauseIndexing = async (jobId) => {
-  const response = await client.post(`/api/indexing/pause/${jobId}`);
+  const response = await client.post(`/indexing/pause/${jobId}`);
   return response.data;
 };
 
 export const resumeIndexing = async (jobId) => {
-  const response = await client.post(`/api/indexing/resume/${jobId}`);
+  const response = await client.post(`/indexing/resume/${jobId}`);
   return response.data;
 };
 
 export const continueInBackground = async (jobId) => {
-  const response = await client.post(`/api/indexing/background/${jobId}`);
+  const response = await client.post(`/indexing/background/${jobId}`);
   return response.data;
 };
 
 export const sendQuestion = async (question, filterCategory = 'Tutti') => {
-  const response = await client.post('/api/chat/query', {
+  const response = await client.post('/chat/query', {
     question,
     filter_category: filterCategory,
   });
@@ -75,6 +75,6 @@ export const sendQuestion = async (question, filterCategory = 'Tutti') => {
 };
 
 export const getViewerPage = async (documentId, page) => {
-  const response = await client.get(`/api/viewer/${documentId}/page/${page}`);
+  const response = await client.get(`/viewer/${documentId}/page/${page}`);
   return response.data;
 };
