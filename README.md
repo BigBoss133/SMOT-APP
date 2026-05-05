@@ -1,0 +1,2 @@
+# SMOT
+App doc
