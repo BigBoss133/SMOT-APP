@@ -23,8 +23,8 @@ SMOT è un'applicazione **desktop nativa** per l'archiviazione e la consultazion
 
 | Branch | Ruolo | Chi Lavora |
 |--------|-------|------------|
-| `main` | Sviluppo backend + logica | Sviluppatore principale |
-| `Animations-and-design` | UI/UX, animazioni, Graph View | Designer |
+| `main` | Sviluppo backend + logica | Socio sviluppatore |
+| `Animations-and-design` | UI/UX, animazioni, Graph View | TU (designer) |
 | `installer` | Installer Windows/macOS/Linux + wizard | Sviluppatore principale |
 
 ---
