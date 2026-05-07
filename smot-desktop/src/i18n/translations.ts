@@ -7,6 +7,7 @@ export const translations = {
     navIndexing: "Indicizzazione",
     navChat: "Chat",
     navViewer: "Viewer",
+    navGraph: "Graph View",
     navSettings: "Impostazioni",
     welcomeTitle: "Benvenuto in SMOT",
     welcomeSubtitle:
@@ -40,6 +41,7 @@ export const translations = {
     navIndexing: "Indexing",
     navChat: "Chat",
     navViewer: "Viewer",
+    navGraph: "Graph View",
     navSettings: "Settings",
     welcomeTitle: "Welcome to SMOT",
     welcomeSubtitle: "Local smart archive for documents and semantic search.",
