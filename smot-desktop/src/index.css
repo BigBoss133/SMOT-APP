@@ -1,16 +1,27 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
 
 :root {
-  --app-bg-primary: #0a1a3b;
+  --color-bg-primary: #0a1a3b;
+  --color-accent-primary: #4338f5;
+  --color-accent-secondary: #894df8;
+  --color-highlight: #bcc41c;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #8a9bb5;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-overlay: rgba(10, 26, 59, 0.88);
+  --gradient-primary: linear-gradient(135deg, #4338f5 0%, #894df8 100%);
+  --gradient-bg: radial-gradient(ellipse at top, #1e3a8a 0%, #0a1a3b 100%);
+
+  --app-bg-primary: var(--color-bg-primary);
   --app-bg-secondary: #f8fafc;
-  --app-bg-sidebar: #111111;
-  --primary-action: #4338f5;
-  --secondary-action: #894df8;
-  --accent-highlight: #bcc41c;
-  --soft-accent: #c084fc;
-  --text-on-dark: #ffffff;
+  --app-bg-sidebar: var(--color-bg-primary);
+  --primary-action: var(--color-accent-primary);
+  --secondary-action: var(--color-accent-secondary);
+  --accent-highlight: var(--color-highlight);
+  --soft-accent: var(--color-accent-secondary);
+  --text-on-dark: var(--color-text-primary);
   --text-on-light: #111111;
-  --text-muted: #6b7280;
+  --text-muted: var(--color-text-secondary);
   --success: #10981a;
   --warning: #f59e0b;
   --error: #ef4444;
@@ -30,7 +41,7 @@ body,
 
 body {
   font-family: "Manrope", "Segoe UI", sans-serif;
-  background: radial-gradient(circle at 10% 10%, #1c2e61 0%, var(--app-bg-primary) 46%, #070f24 100%);
+  background: var(--gradient-bg);
   color: var(--text-on-light);
 }
 
@@ -53,7 +64,7 @@ h3 {
   background: var(--app-bg-sidebar);
   color: var(--text-on-dark);
   padding: 24px 18px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid var(--color-border);
 }
 
 .brand-title {
@@ -63,7 +74,7 @@ h3 {
 
 .brand-subtitle {
   margin-top: 6px;
-  color: #c4c8d8;
+  color: var(--text-muted);
   font-size: 0.84rem;
 }
 
@@ -86,12 +97,12 @@ h3 {
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-border);
   transform: translateX(2px);
 }
 
 .nav-item.active {
-  background: linear-gradient(90deg, var(--primary-action), var(--secondary-action));
+  background: var(--gradient-primary);
 }
 
 .main-content {
@@ -235,7 +246,7 @@ h3 {
 }
 
 .action-button {
-  background: var(--primary-action);
+  background: var(--gradient-primary);
   color: var(--text-on-dark);
   padding: 10px 16px;
   border-radius: 9999px;
@@ -457,13 +468,13 @@ mark,
   right: 0;
   bottom: 0;
   height: 50px;
-  background: #111111;
+  background: var(--app-bg-primary);
   color: #ffffff;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 22px;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-top: 1px solid var(--color-border);
   z-index: 10;
 }
 
@@ -513,7 +524,7 @@ mark,
 
   .left-sidebar {
     border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .nav-stack {

@@ -50,11 +50,22 @@ Legacy (obsoleto ma mantenuto):
     - tentativo `invoke(...)` in runtime Tauri
     - fallback browser/mock per sviluppo Vite puro
 
+### Aggiornamento UI Palette (2026-05-07)
+- Applicata la palette ufficiale da `.sisyphus/plans/smot-g2-persistence.md` (branch `conflict_070526_1255`) in `smot-desktop/src/index.css`.
+- Colori brand allineati:
+  - Navy `#0a1a3b`
+  - Indaco `#4338f5`
+  - Viola `#894df8`
+  - Highlight oliva `#bcc41c`
+  - Testo secondario grigio-blu `#8a9bb5`
+- Aggiunte variabili CSS ufficiali (`--color-*`, `--gradient-primary`, `--gradient-bg`) senza modifiche a layout/logica.
+
 ### Qualità e test
 - `yarn lint` ✅
 - `yarn build` ✅
 - Smoke screenshot UI su `http://127.0.0.1:1420` ✅
 - Testing agent report: `/app/test_reports/iteration_2.json` → **100% frontend pass** ✅
+- Verifica palette con `auto_frontend_testing_agent` ✅ (nessuna regressione funzionale)
 
 Nota ambiente:
 - `cargo` non disponibile nel container corrente (impossibile `cargo check` qui).
