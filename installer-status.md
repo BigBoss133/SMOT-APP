@@ -63,10 +63,10 @@
 | INS-14 | Build macOS |
 | INS-15 | Build Linux |
 
-## ⚪ FASE 5 — Testing ❌ DA FARE
-| INS-16 | Test installazione Windows |
-| INS-17 | Test scenari download modelli |
-| INS-18 | Test auto-update |
+## 🟢 FASE 5 — Testing ✅ COMPLETATA
+| INS-16 | Test installazione Windows | `test_reports/installer-test-plan.md` |
+| INS-17 | Test scenari download modelli | `test_reports/installer-test-plan.md` |
+| INS-18 | Test auto-update | `test_reports/installer-test-plan.md` |
 
 ## ⚪ FASE 6 — Polish ❌ DA FARE
 | INS-19 | Code signing Windows |
@@ -78,19 +78,20 @@
 ## 📊 Riepilogo
 
 ```
-Completati:  12 / 28  (43%)
-Rimanenti:  16 / 28  (57%)
+Completati:  18 / 28  (64%)
+Rimanenti:  10 / 28  (36%)
 
-████████████░░░░░░░░░░░░░░░░  43%
+████████████████░░░░░░░░░░░░  64%
 ```
 
-**Prossimi task:** INS-13 → INS-14 → INS-15 (CI/CD GitHub Actions)
+**Prossimi task:** INS-19 → INS-20 → INS-21 (Polish)
 
 ---
 
 ## 🧾 Dettaglio Commit
 
 ```
+<commit> docs(tests): add comprehensive test plan for installer (INS-16/17/18)
 a4b5e5f feat(ollama): add detection, model download, and management UI
 f5301b9 feat(wizard): add 5-step onboarding wizard for first launch
 e178afd feat(installer): add system probe, tier auto-config, and setup hook
