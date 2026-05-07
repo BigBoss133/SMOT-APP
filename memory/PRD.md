@@ -68,7 +68,9 @@ Legacy (obsoleto ma mantenuto):
   - 🟡 **T13 UI integrazione Tauri API**: parziale (invoke + fallback browser, flussi ancora MOCKED)
   - ✅ **T2 Schema SQLite**: completato in `src-tauri/migrations/001_initial.sql`
   - ✅ **T3 Rust + SQLite dependencies/init**: completato (`rusqlite` + `src-tauri/src/db.rs` + init DB in startup)
-  - ⏳ **T5–T12, T14–T20**: non ancora implementati
+  - ✅ **T5 Parser PDF**: completato (`pdf-extract`)
+  - ✅ **T6 Parser DOCX**: completato (`docx-rust`)
+  - ⏳ **T7–T12, T14–T20**: non ancora implementati
 
 ### Implementazione tecnica T2/T3
 - Aggiunta dipendenza `rusqlite` (`Cargo.toml`, feature `bundled`).
@@ -81,6 +83,17 @@ Legacy (obsoleto ma mantenuto):
   - init schema su `smot.db`
 - Hook startup in `src-tauri/src/lib.rs` (`setup`) con inizializzazione SQLite e log path DB.
 
+### Implementazione tecnica T5/T6
+- Aggiunte dipendenze parser in `src-tauri/Cargo.toml`:
+  - `pdf-extract`
+  - `docx-rust`
+- Creato modulo `src-tauri/src/parsers.rs`:
+  - `extract_document_text(...)` con routing per estensione
+  - parser PDF reale con `extract_text_by_pages`
+  - parser DOCX reale via `DocxFile::from_file(...).parse(...)` e `document.body.text()`
+- Aggiunto comando Tauri `parse_document_text` in `src-tauri/src/lib.rs`.
+- Fallback OCR PDF impostato come stato esplicito (`fallback_needed`, `fallback_reason`) ma OCR non attivo in questa iterazione.
+
 ### Qualità e test
 - `yarn lint` ✅
 - `yarn build` ✅
@@ -88,13 +101,14 @@ Legacy (obsoleto ma mantenuto):
 - Testing agent report: `/app/test_reports/iteration_2.json` → **100% frontend pass** ✅
 - Verifica palette con `auto_frontend_testing_agent` ✅ (nessuna regressione funzionale)
 - Smoke post T2/T3 + `auto_frontend_testing_agent` ✅ (nessuna regressione UI)
+- Smoke post T5/T6 + `auto_frontend_testing_agent` ✅ (nessuna regressione UI)
 
 Nota ambiente:
 - `cargo` non disponibile nel container corrente (impossibile `cargo check` qui).
 
 ## Stato integrazioni
 - Ollama: non ancora integrato (step successivo Gate G3)
-- SQLite reale: non ancora integrato (step successivo Gate G1 T2/T3)
+- SQLite reale: inizializzazione schema completata (T2/T3), persistenza flussi applicativi ancora da collegare
 
 ## MOCKED (attuale)
 Flussi attualmente **MOCKED** per consentire migrazione UI end-to-end:
@@ -107,11 +121,10 @@ Flussi attualmente **MOCKED** per consentire migrazione UI end-to-end:
 
 ## Backlog prioritizzato
 ### P0 (prossimi step immediati)
-1. Schema SQLite reale in Rust (`documents`, `document_chunks`, `fts_documents`, `embeddings`)
-2. Modulo `rusqlite` + init DB locale e migrazioni base
-3. Upload reale file tramite dialog Tauri + persistenza metadata su SQLite
-4. Indicizzazione reale: estrazione testo, chunking, FTS5
-5. Sostituzione definitiva fallback mock con dati persistenti
+1. Upload reale file tramite dialog Tauri + persistenza metadata su SQLite
+2. Collegare `parse_document_text` al flusso ingest documenti
+3. Indicizzazione reale: chunking + FTS5 + stato job persistente
+4. Sostituzione progressiva fallback mock con dati persistenti
 
 ### P1
 1. Rilevazione robusta Ollama all’avvio + fallback UI
