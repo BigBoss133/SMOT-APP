@@ -1,4 +1,5 @@
 mod db;
+mod parsers;
 
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
@@ -127,6 +128,11 @@ struct ViewerPageData {
   total_pages: u16,
   highlights: Vec<String>,
   text: String,
+}
+
+#[derive(Deserialize)]
+struct ParseDocumentInput {
+  file_path: String,
 }
 
 fn sample_documents() -> Vec<ViewerDocument> {
@@ -319,6 +325,11 @@ fn get_viewer_page(payload: ViewerPageInput) -> ViewerPageData {
   }
 }
 
+#[tauri::command]
+fn parse_document_text(payload: ParseDocumentInput) -> Result<parsers::ParsedDocumentOutput, String> {
+  parsers::extract_document_text(payload.file_path.into())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   let state = AppState {
@@ -339,7 +350,8 @@ pub fn run() {
       resume_indexing,
       continue_in_background,
       chat_query,
-      get_viewer_page
+      get_viewer_page,
+      parse_document_text
     ])
     .setup(|app| {
       let db_path = db::init_database(&app.handle())?;
