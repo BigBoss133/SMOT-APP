@@ -443,6 +443,611 @@ Wave FINAL (4 review paralleli):
 
 ---
 
+## Risk Mitigation — Soluzioni ai Blocchi Principali
+
+### 🔴 R1. Parser PDF/DOCX Incompleti su File Reali
+
+**Rischio:** Testo estratto male o vuoto → indicizzazione inutile
+
+**Soluzione Implementativa:**
+
+```rust
+// src-tauri/src/parsers/mod.rs
+pub enum ParseResult {
+    Success { text: String, metadata: DocMetadata },
+    Partial { text: String, warnings: Vec<String> }, // Testo parziale ma usabile
+    Failed { reason: String, fallback: Option<String> }, // OCR come fallback
+}
+
+pub async fn parse_document(path: &Path) -> ParseResult {
+    match extension {
+        "pdf" => parse_pdf_robust(path).await,
+        "docx" => parse_docx_robust(path).await,
+        _ => ParseResult::Failed { 
+            reason: "Formato non supportato".to_string(),
+            fallback: None 
+        },
+    }
+}
+
+async fn parse_pdf_robust(path: &Path) -> ParseResult {
+    // 1. Prova pdf-extract (testo nativo)
+    match pdf_extract::extract_text(path) {
+        Ok(text) if !text.trim().is_empty() => {
+            ParseResult::Success { text, metadata: extract_metadata(path) }
+        }
+        Ok(text) if text.trim().is_empty() => {
+            // 2. PDF è una scansione immagine → OCR
+            match ocr_image_pdf(path).await {
+                Ok(ocr_text) => ParseResult::Success { 
+                    text: ocr_text, 
+                    metadata: extract_metadata(path) 
+                },
+                Err(e) => ParseResult::Failed { 
+                    reason: format!("PDF senza testo estratto, OCR fallito: {}", e),
+                    fallback: None 
+                }
+            }
+        }
+        Err(e) => ParseResult::Partial { 
+            text: extract_partial_pdf(path).unwrap_or_default(),
+            warnings: vec![format!("Errore parsing: {}", e)] 
+        }
+    }
+}
+```
+
+**Mitigazioni Aggiuntive:**
+1. **Test Suite con Corpus Reale** (T5.1): 
+   - 20 PDF reali: contratti, fatture, scansioni, layout complessi
+   - Assertions: `assert!(extracted_text.len() > 100)` (minimo 100 chars)
+   - Coverage target: 95% dei documenti estratti con successo
+
+2. **Fallback Multi-Livello:**
+   - Livello 1: `pdf-extract` (veloce, testo nativo)
+   - Livello 2: `lopdf` (più robusto su PDF corrotti)
+   - Livello 3: OCR con `tesseract` (per scansioni)
+
+3. **Validazione Post-Parsing:**
+   - Se testo < 50 caratteri → flag come "parsing dubbio"
+   - Mostra warning in UI: "Documento potrebbe non essere indicizzato correttamente"
+
+**Task Aggiornati:**
+- T5.1: Parser PDF robusto con test suite corpus reale
+- T5.2: Integrazione OCR fallback per scansioni
+
+---
+
+### 🔴 R2. sqlite-vec e Compatibilità Cross-Platform
+
+**Rischio:** Build/packaging instabile su Win/Mac/Linux
+
+**Soluzione Implementativa:**
+
+**Fase 1 (P0 - Ora): FTS5 Solido**
+```rust
+// src-tauri/src/search/mod.rs
+pub enum SearchBackend {
+    Fts5Only,      // Sempre disponibile
+    Hybrid,        // FTS5 + embeddings (se sqlite-vec funziona)
+}
+
+pub struct SearchService {
+    backend: SearchBackend,
+    conn: Connection,
+}
+
+impl SearchService {
+    pub fn new(conn: Connection) -> Self {
+        // Prova a inizializzare sqlite-vec
+        match Self::init_sqlite_vec(&conn) {
+            Ok(_) => {
+                log::info!("sqlite-vec inizializzato - modalità ibrida");
+                Self { backend: SearchBackend::Hybrid, conn }
+            }
+            Err(e) => {
+                log::warn!("sqlite-vec non disponibile: {} - uso solo FTS5", e);
+                Self { backend: SearchBackend::Fts5Only, conn }
+            }
+        }
+    }
+    
+    pub fn search(&self, query: &str) -> Vec<SearchResult> {
+        match self.backend {
+            SearchBackend::Fts5Only => self.search_fts5_only(query),
+            SearchBackend::Hybrid => self.search_hybrid(query),
+        }
+    }
+}
+```
+
+**Fase 2 (P1 - Dopo): Semantic Search Condizionale**
+```rust
+// Carica sqlite-vec dinamicamente solo se disponibile
+#[cfg(feature = "sqlite-vec")]
+mod vector_search {
+    pub fn enable_semantic() { /* ... */ }
+}
+
+// Feature flag in Cargo.toml
+[features]
+default = ["fts5"]
+semantic = ["sqlite-vec", "fts5"]
+```
+
+**Mitigazioni Build:**
+1. **CI/CD Multi-Platform Testing (T7):**
+   - Build separata per Windows, macOS (Intel + ARM), Linux
+   - Test `cargo build --features semantic` su ogni piattaforma
+   - Se fallisce, build con `--no-default-features` (solo FTS5)
+
+2. **Runtime Detection:**
+   ```rust
+   pub fn is_semantic_available() -> bool {
+       // Controlla a runtime se sqlite-vec è caricabile
+       unsafe { sqlite_vec::sqlite3_vec_init.is_ok() }
+   }
+   ```
+
+**Task Aggiornati:**
+- T10: FTS5 base (P0, obbligatorio)
+- T17: sqlite-vec semantic search (P1, solo se build passa su tutte le piattaforme)
+
+---
+
+### 🔴 R3. Dipendenza Ollama Locale
+
+**Rischio:** Utenti senza Ollama bloccati in chat
+
+**Soluzione Implementativa:**
+
+```rust
+// src-tauri/src/ai/mod.rs
+pub struct AIService {
+    state: AIState,
+    capabilities: AICapabilities,
+}
+
+#[derive(Debug, Clone)]
+pub enum AIState {
+    Available { models: Vec<String>, preferred: String },
+    Unavailable { reason: String },
+    Degraded { fallback: Box<AIState> },
+}
+
+impl AIService {
+    pub async fn detect() -> Self {
+        // 1. Prova Ollama
+        match Self::check_ollama().await {
+            Ok(models) if !models.is_empty() => {
+                Self { 
+                    state: AIState::Available { 
+                        models: models.clone(),
+                        preferred: models[0].clone() 
+                    },
+                    capabilities: AICapabilities::Full 
+                }
+            }
+            Ok(_) => Self::no_models_available(),
+            Err(e) => {
+                log::warn!("Ollama non disponibile: {}", e);
+                Self::unavailable_with_reason(e.to_string())
+            }
+        }
+    }
+    
+    pub fn chat(&self, query: &str, context: &[Chunk]) -> Result<ChatResponse, AIError> {
+        match &self.state {
+            AIState::Available { preferred, .. } => {
+                self.query_ollama(query, context, preferred).await
+            }
+            AIState::Unavailable { reason } => {
+                Err(AIError::NotAvailable { 
+                    message: format!("AI non disponibile: {}. Usa la ricerca per trovare documenti.", reason),
+                    fallback_action: "search" 
+                })
+            }
+            _ => Err(AIError::UnknownState)
+        }
+    }
+}
+```
+
+**UI Fallback:**
+```typescript
+// src/pages/ChatPage.tsx
+function ChatPage() {
+  const { aiState } = useAI();
+  
+  if (aiState.status === 'unavailable') {
+    return (
+      <div className="ai-fallback">
+        <Alert icon={BrainOff}>
+          {aiState.message}
+        </Alert>
+        <Button onClick={() => navigate('/')}>
+          Vai alla Ricerca
+        </Button>
+      </div>
+    );
+  }
+  
+  return <ChatInterface />;
+}
+```
+
+**Mitigazioni:**
+1. **Rilevamento all'avvio (T12):** Controlla Ollama in <3 secondi, senza bloccare UI
+2. **UX Esplicita:** Badge visibile "AI Pronta" / "AI Non Disponibile"
+3. **Fallback automatico:** Se chat aperta e Ollama va offline → redirect a ricerca
+4. **Guida installazione:** Link a docs Ollama nella UI quando non rilevato
+
+**Task Aggiornati:**
+- T12: Rilevamento Ollama robusto con timeout
+- T18: Fallback UI completo con redirect automatico
+
+---
+
+### 🔴 R4. Migrazione CRA → Vite + Tauri Invoke
+
+**Rischio:** Regressioni routing/stato UI
+
+**Soluzione Implementativa:**
+
+**Strategia Migrazione Per Layer:**
+
+```
+Fase 1: Shell UI (T4)
+├── Copia App.js, index.js
+├── Configura React Router (stesse routes)
+└── Verifica: routing base funziona
+
+Fase 2: Services Layer (T13)
+├── Crea services/tauriApi.ts
+├── Implementa invoke() wrapper
+├── Test: una chiamata API funziona
+└── Poi: migra pagina per pagina
+
+Fase 3: Pagina per Pagina
+├── DashboardPage → test → OK → prossima
+├── UploadPage → test → OK → prossima
+├── ChatPage → test → OK → prossima
+└── etc.
+```
+
+**Wrapper API per Retrocompatibilità:**
+```typescript
+// src/services/api.ts - Mantieni stessa interfaccia!
+import { invoke } from '@tauri-apps/api/core';
+
+// Vecchio: export const getDocuments = () => axios.get('/api/documents')
+// Nuovo: stessa firma, implementazione cambia
+export const getDocuments = async (): Promise<Document[]> => {
+  return await invoke('get_documents'); // Chiama Rust
+};
+
+export const uploadDocuments = async (files: string[]): Promise<UploadResponse> => {
+  return await invoke('upload_documents', { files });
+};
+
+// ... tutte le altre API mantengono stessa firma
+```
+
+**Test di Non-Regressione:**
+```bash
+# Per ogni pagina migrata:
+1. npm run dev
+2. Playwright: test E2E pagina
+3. Confronta screenshot con versione precedente
+4. Tutte le interazioni devono funzionare
+```
+
+**Mitigazioni:**
+1. **Snapshot Testing:** Screenshots della UI vecchia come reference
+2. **Feature Flag:** `const USE_TAURI = true;` — puoi rollback a mock se serve
+3. **Test Incrementali:** Ogni pagina testata prima di procedere alla successiva
+
+**Task Aggiornati:**
+- T4: Migrazione shell UI con test routing
+- T13: Migrazione services layer per layer
+
+---
+
+### 🔴 R5. Concorrenza Job Indicizzazione
+
+**Rischio:** Race condition e UI inconsistente
+
+**Soluzione Implementativa:**
+
+```rust
+// src-tauri/src/indexing/job_manager.rs
+use std::sync::{Arc, Mutex};
+use tokio::sync::{mpsc, oneshot};
+
+pub struct IndexingJobManager {
+    state: Arc<Mutex<JobState>>,
+    control_tx: mpsc::Sender<JobCommand>,
+}
+
+#[derive(Debug, Clone)]
+pub struct JobState {
+    pub job_id: String,
+    pub status: JobStatus,
+    pub progress: IndexProgress,
+    pub documents: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub enum JobStatus {
+    Idle,
+    Running { since: Instant },
+    Paused { progress_at_pause: IndexProgress },
+    Background { checkpoint: IndexProgress },
+    Completed { at: Instant },
+    Failed { error: String },
+}
+
+pub enum JobCommand {
+    Start { documents: Vec<String> },
+    Pause,
+    Resume,
+    Background,
+    Cancel,
+}
+
+impl IndexingJobManager {
+    pub fn new() -> Self {
+        let (tx, mut rx) = mpsc::channel(32);
+        let state = Arc::new(Mutex::new(JobState::default()));
+        let state_clone = state.clone();
+        
+        // Task background che gestisce lo stato
+        tokio::spawn(async move {
+            while let Some(cmd) = rx.recv().await {
+                let mut state = state_clone.lock().unwrap();
+                
+                match cmd {
+                    JobCommand::Pause => {
+                        if let JobStatus::Running { .. } = state.status {
+                            state.status = JobStatus::Paused { 
+                                progress_at_pause: state.progress.clone() 
+                            };
+                            log::info!("Job {} pausato", state.job_id);
+                        }
+                    }
+                    JobCommand::Resume => {
+                        if let JobStatus::Paused { .. } = state.status {
+                            state.status = JobStatus::Running { since: Instant::now() };
+                        }
+                    }
+                    // ... altri comandi
+                }
+            }
+        });
+        
+        Self { state, control_tx: tx }
+    }
+    
+    pub async fn get_status(&self) -> JobState {
+        self.state.lock().unwrap().clone()
+    }
+    
+    pub async fn pause(&self) -> Result<(), String> {
+        self.control_tx.send(JobCommand::Pause).await
+            .map_err(|e| format!("Failed to send pause: {}", e))
+    }
+}
+```
+
+**Test Concorrenza:**
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[tokio::test]
+    async fn test_pause_resume_sequence() {
+        let manager = IndexingJobManager::new();
+        
+        // Start
+        manager.start(vec!["doc1.pdf".to_string()]).await.unwrap();
+        assert!(matches!(manager.get_status().await.status, JobStatus::Running { .. }));
+        
+        // Pause
+        manager.pause().await.unwrap();
+        assert!(matches!(manager.get_status().await.status, JobStatus::Paused { .. }));
+        
+        // Resume
+        manager.resume().await.unwrap();
+        assert!(matches!(manager.get_status().await.status, JobStatus::Running { .. }));
+        
+        // Pause again
+        manager.pause().await.unwrap();
+        // Background
+        manager.background().await.unwrap();
+        assert!(matches!(manager.get_status().await.status, JobStatus::Background { .. }));
+    }
+    
+    #[tokio::test]
+    async fn test_race_conditions() {
+        let manager = IndexingJobManager::new();
+        
+        // 10 pause contemporanee
+        let handles: Vec<_> = (0..10).map(|_| {
+            let m = manager.clone();
+            tokio::spawn(async move { m.pause().await })
+        }).collect();
+        
+        for h in handles {
+            h.await.unwrap().unwrap(); // Nessun panic, tutti gestiti
+        }
+    }
+}
+```
+
+**Mitigazioni UI:**
+```typescript
+// Polling robusto con debounce
+const useIndexingStatus = (jobId: string) => {
+  const [status, setStatus] = useState<JobStatus>(null);
+  
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const newStatus = await getIndexingStatus(jobId);
+      
+      // Solo se cambiato davvero
+      if (JSON.stringify(newStatus) !== JSON.stringify(status)) {
+        setStatus(newStatus);
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [jobId]);
+  
+  return status;
+};
+```
+
+**Task Aggiornati:**
+- T11: Job manager con stato centralizzato e test concorrenza
+
+---
+
+### 🔴 R6. Percorsi File/Permessi OS
+
+**Rischio:** Upload OK su OS A, fallisce su OS B
+
+**Soluzione Implementativa:**
+
+```rust
+// src-tauri/src/filesystem/mod.rs
+use tauri::api::path::{app_data_dir, app_local_data_dir};
+use std::path::PathBuf;
+
+pub struct AppStorage {
+    base_dir: PathBuf,
+    documents_dir: PathBuf,
+}
+
+impl AppStorage {
+    pub fn new(app_handle: &tauri::AppHandle) -> Result<Self, String> {
+        // USA SEMPRE app_data_dir - mai path hardcoded!
+        let base_dir = app_data_dir(app_handle.config())
+            .ok_or("Impossibile ottenere app data dir")?;
+        
+        let documents_dir = base_dir.join("documents");
+        
+        // Crea directory se non esistono
+        std::fs::create_dir_all(&documents_dir)
+            .map_err(|e| format!("Failed to create documents dir: {}", e))?;
+        
+        Ok(Self { base_dir, documents_dir })
+    }
+    
+    pub fn store_document(&self, source_path: &Path, doc_id: &str) -> Result<PathBuf, String> {
+        // Sanifica nome file
+        let file_name = sanitize_filename(source_path.file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown"));
+        
+        let dest_path = self.documents_dir.join(format!("{}_{}", doc_id, file_name));
+        
+        // Copia file (non move, per sicurezza)
+        std::fs::copy(source_path, &dest_path)
+            .map_err(|e| format!("Failed to copy file: {}", e))?;
+        
+        Ok(dest_path)
+    }
+    
+    pub fn get_document_path(&self, doc_id: &str, file_name: &str) -> PathBuf {
+        self.documents_dir.join(format!("{}_{}", doc_id, file_name))
+    }
+}
+
+// Sanitizza nomi file cross-platform
+fn sanitize_filename(name: &str) -> String {
+    // Caratteri illegali su Windows: < > : " / \ | ? *
+    name.chars()
+        .map(|c| match c {
+            '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*' => '_',
+            _ => c
+        })
+        .collect()
+}
+```
+
+**Permessi Tauri (tauri.conf.json):**
+```json
+{
+  "tauri": {
+    "allowlist": {
+      "fs": {
+        "all": false,
+        "readFile": true,
+        "writeFile": true,
+        "readDir": true,
+        "copyFile": true,
+        "createDir": true,
+        "scope": [
+          "$APPDATA/**",        // Solo app data dir!
+          "$APPDATA/documents/**"
+        ]
+      }
+    }
+  }
+}
+```
+
+**Test Cross-Platform:**
+```rust
+#[test]
+fn test_paths_all_os() {
+    // Simula path problematici
+    let test_cases = vec![
+        ("file:name.pdf", "file_name.pdf"),      // Windows
+        ("file/name.pdf", "file_name.pdf"),      // Unix
+        ("file\\name.pdf", "file_name.pdf"),     // Windows backslash
+        ("file<name>.pdf", "file_name_.pdf"),    // Caratteri speciali
+    ];
+    
+    for (input, expected) in test_cases {
+        assert_eq!(sanitize_filename(input), expected);
+    }
+}
+
+#[test]
+fn test_storage_operations() {
+    // Test su tmp dir (funziona su tutti gli OS)
+    let tmp_dir = tempfile::tempdir().unwrap();
+    // ... test operazioni
+}
+```
+
+**Mitigazioni:**
+1. **Scope Tauri ristretto:** Solo `$APPDATA/**`, mai path assoluti
+2. **Sanitizzazione nomi:** Rimuovi caratteri illegali per OS
+3. **Test CI:** Esegui test filesystem su Windows, macOS, Linux
+4. **Error Handling:** Ogni operazione filesystem ha `Result` con messaggio chiaro
+
+**Task Aggiornati:**
+- T9: Upload con AppStorage e sanitizzazione
+- T20: Test upload su tutti e 3 gli OS
+
+---
+
+## Checklist Risk Mitigation
+
+Prima di procedere con lo sviluppo, verifica che queste mitigazioni siano implementate:
+
+- [ ] **R1:** Parser PDF ha test suite con 20+ documenti reali
+- [ ] **R2:** FTS5 funziona senza sqlite-vec (fallback sempre disponibile)
+- [ ] **R3:** UI mostra stato AI esplicito, chat ha fallback a ricerca
+- [ ] **R4:** Migrazione per layer con test dopo ogni pagina
+- [ ] **R5:** Job manager testato per race conditions
+- [ ] **R6:** Tutti i path usano `app_data_dir()`, mai hardcoded
+
+---
+
 ## Final Verification Wave (DOPO tutti i task implementazione)
 
 > 4 agenti di review in PARALLELO. Tutti devono approvare. Presenta risultati consolidati all'utente e attendi "okay" esplicito prima di completare.
