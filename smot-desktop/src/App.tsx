@@ -1,0 +1,162 @@
+import { Languages, Search } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Route, Routes } from "react-router-dom";
+import { RightSystemPanel } from "./components/RightSystemPanel";
+import { SidebarNav } from "./components/SidebarNav";
+import { StatusBar } from "./components/StatusBar";
+import { useLanguage } from "./context/LanguageContext";
+import { translations } from "./i18n/translations";
+import ChatPage from "./pages/ChatPage";
+import DashboardPage from "./pages/DashboardPage";
+import IndexingPage from "./pages/IndexingPage";
+import SettingsPage from "./pages/SettingsPage";
+import UploadPage from "./pages/UploadPage";
+import ViewerPage from "./pages/ViewerPage";
+import {
+  getDocuments,
+  getModes,
+  getSystemStatus,
+  updateMode,
+} from "./services/api";
+import type { ModeData, SystemStatus, ViewerDocument } from "./types";
+
+const fallbackModes: ModeData = {
+  active_mode: "Balanced",
+  available_modes: ["Performance", "Balanced", "Lite"],
+};
+
+export default function App() {
+  const { language, toggleLanguage } = useLanguage();
+  const text = translations[language];
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
+  const [documents, setDocuments] = useState<ViewerDocument[]>([]);
+  const [modeData, setModeData] = useState<ModeData>(fallbackModes);
+  const [searchValue, setSearchValue] = useState("");
+
+  const refreshDocuments = useCallback(async () => {
+    try {
+      const docs = await getDocuments();
+      setDocuments(docs);
+    } catch {
+      setDocuments([]);
+    }
+  }, []);
+
+  const refreshSystem = useCallback(async () => {
+    try {
+      const status = await getSystemStatus();
+      setSystemStatus(status);
+    } catch {
+      setSystemStatus(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const bootstrap = async () => {
+      try {
+        const [docs, status, modes] = await Promise.all([
+          getDocuments(),
+          getSystemStatus(),
+          getModes(),
+        ]);
+        if (!active) return;
+        setDocuments(docs);
+        setSystemStatus(status);
+        setModeData(modes);
+      } catch {
+        if (!active) return;
+        setDocuments([]);
+        setSystemStatus(null);
+        setModeData(fallbackModes);
+      }
+    };
+
+    void bootstrap();
+    const timer = setInterval(() => {
+      void refreshSystem();
+    }, 5000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [refreshSystem]);
+
+  const changeMode = async (mode: string) => {
+    try {
+      const next = await updateMode(mode);
+      setModeData(next);
+    } catch {
+      setModeData((prev) => ({ ...prev, active_mode: mode }));
+    }
+  };
+
+  return (
+    <div className="app-shell" data-testid="smot-app-shell">
+      <SidebarNav />
+
+      <main className="main-content" data-testid="main-content-area">
+        <header className="topbar" data-testid="main-topbar">
+          <h1 data-testid="app-main-title">{text.appName}</h1>
+          <div className="topbar-actions" data-testid="topbar-actions">
+            <label className="search-box" data-testid="topbar-search-box">
+              <Search size={15} />
+              <input
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder={text.searchPlaceholder}
+                data-testid="topbar-search-input"
+              />
+            </label>
+            <button
+              className="language-toggle"
+              onClick={toggleLanguage}
+              data-testid="language-toggle-button"
+            >
+              <Languages size={16} />
+              <span data-testid="language-toggle-value">
+                {language.toUpperCase()}
+              </span>
+            </button>
+          </div>
+        </header>
+
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <DashboardPage
+                documents={documents}
+                modeData={modeData}
+                onModeChange={changeMode}
+              />
+            }
+          />
+          <Route
+            path="/upload"
+            element={<UploadPage onRefreshDocuments={refreshDocuments} />}
+          />
+          <Route
+            path="/indexing/:jobId"
+            element={<IndexingPage onStatusUpdate={() => void refreshDocuments()} />}
+          />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/viewer" element={<ViewerPage />} />
+          <Route path="/viewer/:documentId" element={<ViewerPage />} />
+          <Route
+            path="/settings"
+            element={<SettingsPage modeData={modeData} onModeChange={changeMode} />}
+          />
+        </Routes>
+      </main>
+
+      <RightSystemPanel status={systemStatus} />
+      <StatusBar
+        mode={modeData.active_mode}
+        indexedCount={documents.filter((doc) => doc.indexed).length}
+        totalCount={documents.length}
+      />
+    </div>
+  );
+}
