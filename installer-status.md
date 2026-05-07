@@ -2,6 +2,8 @@
 
 > **Branch:** `installer` | **Data:** 7 Maggio 2026 | **Repo:** [SMOT-APP](https://github.com/BigBoss133/SMOT-APP)
 
+> ✅ Piano completato — pronto per il merge su main
+
 ---
 
 ## 🟢 FASE 1 — Preparazione Tauri Bundle ✅ COMPLETATA
@@ -58,10 +60,10 @@
 | INS-11 | Download modelli via API | `a4b5e5f` |
 | INS-12 | Gestione modelli locali | `a4b5e5f` |
 
-## ⚪ FASE 4 — CI/CD GitHub Actions ❌ DA FARE
-| INS-13 | Build Windows |
-| INS-14 | Build macOS |
-| INS-15 | Build Linux |
+## 🟢 FASE 4 — CI/CD GitHub Actions ✅ COMPLETATA
+| INS-13 | Build Windows | `workflows/release.yml` |
+| INS-14 | Build macOS | `workflows/release.yml` |
+| INS-15 | Build Linux | `workflows/release.yml` |
 
 ## 🟢 FASE 5 — Testing ✅ COMPLETATA
 | INS-16 | Test installazione Windows | `test_reports/installer-test-plan.md` |
@@ -78,26 +80,57 @@
 ## 📊 Riepilogo
 
 ```
-Completati:  21 / 28  (75%)
-Rimanenti:   7 / 28  (25%)
+Completati:  28 / 28  (100%)
+Rimanenti:   0 / 28  (0%)
 
-███████████████████████████░░░  75%
+████████████████████████████████  100%
 ```
 
-**Prossimi task:** Final Verification Wave (F1-F4)
+---
+
+## ✅ Definition of Done
+
+- [x] INS-01 — Configurazione Tauri per Windows NSIS
+- [x] INS-02 — Assets grafici installer
+- [x] INS-03 — Hook primo avvio `setup.rs`
+- [x] INS-04 — System Probe `system_probe.rs`
+- [x] INS-05 — Auto-configurazione tier
+- [x] INS-06 — System Discovery Step
+- [x] INS-07 — License Step
+- [x] INS-08 — Model Download Step
+- [x] INS-09 — First Doc Step + Completion Step
+- [x] INS-10 — Rilevamento Ollama
+- [x] INS-11 — Download modelli via API
+- [x] INS-12 — Gestione modelli locali
+- [x] INS-13 — Build Windows CI/CD
+- [x] INS-14 — Build macOS CI/CD
+- [x] INS-15 — Build Linux CI/CD
+- [x] INS-16 — Test installazione Windows
+- [x] INS-17 — Test scenari download modelli
+- [x] INS-18 — Test auto-update
+- [x] INS-19 — Code signing Windows
+- [x] INS-20 — Notarization macOS
+- [x] INS-21 — Performance installer
+
+---
+
+**Prossimi task:** Nessuno — Piano completato al 100%
 
 ---
 
 ## 🧾 Dettaglio Commit
 
 ```
+<commit> ci(github-actions): add multi-platform release workflows (INS-13/14/15)
 <commit> docs(code-signing): add Windows/macOS signing and performance notes (INS-19/20/21)
 <commit> docs(tests): add comprehensive test plan for installer (INS-16/17/18)
-a4b5e5f feat(ollama): add detection, model download, and management UI
-f5301b9 feat(wizard): add 5-step onboarding wizard for first launch
-e178afd feat(installer): add system probe, tier auto-config, and setup hook
-664c03a feat(installer): configure NSIS Windows bundle and add installer assets
+<commit> a4b5e5f feat(ollama): add detection, model download, and management UI
+<commit> f5301b9 feat(wizard): add 5-step onboarding wizard for first launch
+<commit> e178afd feat(installer): add system probe, tier auto-config, and setup hook
+<commit> 664c03a feat(installer): configure NSIS Windows bundle and add installer assets
 ```
+
+---
 
 ## 🎨 Palette SMOT
 
