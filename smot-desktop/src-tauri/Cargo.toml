@@ -26,3 +26,6 @@ tauri-plugin-log = "2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 pdf-extract = "0.7"
 docx-rust = "0.1.11"
+sysinfo = "0.33"
+num_cpus = "1.16"
+chrono = { version = "0.4", features = ["serde"] }
