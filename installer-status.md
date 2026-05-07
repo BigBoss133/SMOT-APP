@@ -50,10 +50,13 @@
 
 ---
 
-## ⚪ FASE 3 — Ollama Integration ❌ DA FARE
-| INS-10 | Rilevamento Ollama |
-| INS-11 | Download modelli via API |
-| INS-12 | Gestione modelli locali |
+## 🟢 FASE 3 — Ollama Integration ✅ COMPLETATA
+
+| Task | Descrizione | Commit |
+|------|------------|--------|
+| INS-10 | Rilevamento Ollama | `a4b5e5f` |
+| INS-11 | Download modelli via API | `a4b5e5f` |
+| INS-12 | Gestione modelli locali | `a4b5e5f` |
 
 ## ⚪ FASE 4 — CI/CD GitHub Actions ❌ DA FARE
 | INS-13 | Build Windows |
@@ -75,19 +78,20 @@
 ## 📊 Riepilogo
 
 ```
-Completati:  9 / 28  (32%)
-Rimanenti:  19 / 28  (68%)
+Completati:  12 / 28  (43%)
+Rimanenti:  16 / 28  (57%)
 
-████████░░░░░░░░░░░░░░░░░░  32%
+████████████░░░░░░░░░░░░░░░░  43%
 ```
 
-**Prossimi task:** INS-10 → INS-11 → INS-12 (Ollama Integration)
+**Prossimi task:** INS-13 → INS-14 → INS-15 (CI/CD GitHub Actions)
 
 ---
 
 ## 🧾 Dettaglio Commit
 
 ```
+a4b5e5f feat(ollama): add detection, model download, and management UI
 f5301b9 feat(wizard): add 5-step onboarding wizard for first launch
 e178afd feat(installer): add system probe, tier auto-config, and setup hook
 664c03a feat(installer): configure NSIS Windows bundle and add installer assets
