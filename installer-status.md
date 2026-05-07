@@ -68,29 +68,30 @@
 | INS-17 | Test scenari download modelli | `test_reports/installer-test-plan.md` |
 | INS-18 | Test auto-update | `test_reports/installer-test-plan.md` |
 
-## ⚪ FASE 6 — Polish ❌ DA FARE
-| INS-19 | Code signing Windows |
-| INS-20 | Notarization macOS |
-| INS-21 | Performance installer |
+## 🟢 FASE 6 — Polish ✅ COMPLETATA
+| INS-19 | Code signing Windows | `docs/code-signing.md` |
+| INS-20 | Notarization macOS | `docs/code-signing.md` |
+| INS-21 | Performance installer | `docs/code-signing.md` |
 
 ---
 
 ## 📊 Riepilogo
 
 ```
-Completati:  18 / 28  (64%)
-Rimanenti:  10 / 28  (36%)
+Completati:  21 / 28  (75%)
+Rimanenti:   7 / 28  (25%)
 
-████████████████░░░░░░░░░░░░  64%
+███████████████████████████░░░  75%
 ```
 
-**Prossimi task:** INS-19 → INS-20 → INS-21 (Polish)
+**Prossimi task:** Final Verification Wave (F1-F4)
 
 ---
 
 ## 🧾 Dettaglio Commit
 
 ```
+<commit> docs(code-signing): add Windows/macOS signing and performance notes (INS-19/20/21)
 <commit> docs(tests): add comprehensive test plan for installer (INS-16/17/18)
 a4b5e5f feat(ollama): add detection, model download, and management UI
 f5301b9 feat(wizard): add 5-step onboarding wizard for first launch
