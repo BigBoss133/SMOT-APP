@@ -1,91 +1,96 @@
-# PRD — SMOT Smart Archive (Iterazione 1)
+# PRD — SMOT Smart Archive (Pivot Desktop Nativo)
 
-## Problema originale
-Progettare e implementare l'interfaccia desktop di **SMOT**, archivio documentale intelligente **offline-first**, con flussi principali:
-- Dashboard con statistiche e azioni rapide
-- Upload documenti (drag & drop / picker)
-- Indicizzazione con progresso visivo
-- Chat RAG con fonti
-- Viewer documento con navigazione pagina e highlight
-- Settings e monitor risorse
+## Problema originale (aggiornato)
+Realizzare **SMOT** come applicazione **desktop 100% offline** con archiviazione documentale intelligente e RAG locale.
 
-Vincoli branding/UI forniti:
-- Palette SMOT: `#0a1a3b`, `#4338f5`, `#894df8`, `#bcc41c`, `#c084fc`, `#ffffff`
-- Testi ad alto contrasto (bianco su sfondi scuri, nero su bianco)
-- Oliva `#bcc41c` solo per parole chiave/highlight
+Pivot confermato:
+- Da stack web legacy (**FastAPI + CRA**) a stack desktop nativo:
+  - **Tauri v2 (Rust)**
+  - **React + TypeScript + Vite**
+  - **SQLite (rusqlite + FTS5)**
+  - **Ollama locale**
 
-Scelte utente confermate:
-1. **UI/UX + API backend base**
-2. **Selettore modalità hardware in dashboard**
-3. **Interfaccia bilingue IT/EN**
-4. **Viewer con paginazione + highlight dinamici simulati**
-5. Priorità **bilanciata** (visual + flussi)
+## Scelte utente confermate
+1. Procedere subito con migrazione Gate G1
+2. Nuovo workspace Tauri separato in `/app/smot-desktop`
+3. Mantenere legacy code come riferimento temporaneo
+4. Porting rapido UI (funzionalità prima, hardening dopo)
+5. Risposte e interfaccia in italiano/inglese
 
-## Decisioni architetturali
-- Stack creato da zero:
-  - **Frontend:** React (CRA), React Router, Axios, Lucide icons
-  - **Backend:** FastAPI
-- API backend base con logica simulata per:
-  - upload documenti
-  - avvio/stato indicizzazione progressiva
-  - chat con fonti
-  - viewer paginato con highlight
-- Stato dati backend in-memory per MVP rapido (senza persistenza DB in questa iterazione)
-- UI desktop a 3 aree: sidebar sinistra, workspace centrale, sidebar destra, con status bar inferiore
+## Architettura target
+```
+/app/smot-desktop
+├── src/                  # React TS + routing + UI SMOT
+├── src/services/api.ts   # invoke Tauri + fallback browser/mock
+└── src-tauri/            # Rust commands Tauri v2
+```
 
-## Implementato
-### Backend (`/app/backend`)
-- `server.py` con endpoint:
-  - `GET /api/health`
-  - `GET /api/system/status`
-  - `GET/PUT /api/modes`
-  - `GET /api/documents`
-  - `POST /api/documents/upload`
-  - `POST /api/indexing/start`
-  - `GET /api/indexing/status/{job_id}`
-  - `POST /api/indexing/pause/{job_id}`
-  - `POST /api/indexing/resume/{job_id}`
-  - `POST /api/indexing/background/{job_id}`
-  - `POST /api/chat/query`
-  - `GET /api/viewer/{document_id}/page/{page}`
-- Seed documenti demo + progresso indicizzazione simulato
-- Test backend aggiunti dal testing agent: `11/11` passati
+Legacy (obsoleto ma mantenuto):
+- `/app/frontend` (CRA)
+- `/app/backend` (FastAPI)
 
-### Frontend (`/app/frontend`)
-- Routing pagine:
-  - `/` Dashboard
-  - `/upload` Upload & gestione file selezionati
-  - `/indexing/:jobId` Progress indicizzazione con polling
-  - `/chat` Interfaccia chat con fonti cliccabili
-  - `/viewer` e `/viewer/:documentId` Viewer paginato con highlight
-  - `/settings` Configurazioni sistema
-- Layout coerente con requisiti SMOT (3 colonne + status bar)
-- Palette applicata, highlight oliva sui termini chiave
-- Toggle lingua IT/EN globale
-- Data-testid estesi per elementi interattivi e informazioni chiave
-- Correzioni post-test:
-  - fix path API frontend (`/api/api/*` -> corretto)
-  - gestione errori fetch iniziali in `App.js` per evitare runtime overlay bloccante
+## Implementato in questa iterazione (2026-05-07)
+### Gate G1 completato
+- Scaffold completo Tauri v2 in `/app/smot-desktop`
+  - Vite React TS inizializzato
+  - `@tauri-apps/cli` e `@tauri-apps/api` configurati
+  - `tauri.conf.json` aggiornato (finestra desktop, identifier dedicato)
+  - `vite.config.ts` allineato a porta 1420 per dev Tauri
+
+- Migrazione UI dal legacy CRA a React TS (nuovo progetto)
+  - Routing migrato: `/`, `/upload`, `/indexing/:jobId`, `/chat`, `/viewer`, `/viewer/:documentId`, `/settings`
+  - Componenti migrati: sidebar, panel sistema, status bar, selector modalità
+  - i18n IT/EN migrato
+  - Stili SMOT migrati in `src/index.css`
+  - `data-testid` mantenuti su elementi critici/interattivi
+
+- Integrazione Tauri base
+  - Comandi Rust mock in `src-tauri/src/lib.rs` per flussi principali UI
+  - Service layer `src/services/api.ts` con:
+    - tentativo `invoke(...)` in runtime Tauri
+    - fallback browser/mock per sviluppo Vite puro
+
+### Qualità e test
+- `yarn lint` ✅
+- `yarn build` ✅
+- Smoke screenshot UI su `http://127.0.0.1:1420` ✅
+- Testing agent report: `/app/test_reports/iteration_2.json` → **100% frontend pass** ✅
+
+Nota ambiente:
+- `cargo` non disponibile nel container corrente (impossibile `cargo check` qui).
+
+## Stato integrazioni
+- Ollama: non ancora integrato (step successivo Gate G3)
+- SQLite reale: non ancora integrato (step successivo Gate G1 T2/T3)
+
+## MOCKED (attuale)
+Flussi attualmente **MOCKED** per consentire migrazione UI end-to-end:
+- System status
+- Lista documenti
+- Upload/start indexing/status/pause/resume/background
+- Chat response con fonti
+- Viewer page text/highlights
+- Mode read/update
 
 ## Backlog prioritizzato
-### P0 (prossimo step)
-- Persistenza reale documenti/job su database locale
-- Upload reale file/cartelle/ZIP con parsing metadati
-- Indicizzazione reale (estrazione testo/chunking/embedding locale)
-- Miglioramento gestione errori UI per ogni flusso (messaggi contestuali)
+### P0 (prossimi step immediati)
+1. Schema SQLite reale in Rust (`documents`, `document_chunks`, `fts_documents`, `embeddings`)
+2. Modulo `rusqlite` + init DB locale e migrazioni base
+3. Upload reale file tramite dialog Tauri + persistenza metadata su SQLite
+4. Indicizzazione reale: estrazione testo, chunking, FTS5
+5. Sostituzione definitiva fallback mock con dati persistenti
 
 ### P1
-- Onboarding hardware dedicato (wizard iniziale)
-- Filtri avanzati documenti/tag e multi-select batch operations
-- Viewer con anteprima miniatura pagine e jump rapido alle fonti
+1. Rilevazione robusta Ollama all’avvio + fallback UI
+2. Embeddings locali + risposta RAG con citazioni reali
+3. Gestione errori UX più dettagliata per ogni flusso
 
 ### P2
-- Telemetria locale avanzata (CPU/GPU/VRAM timeline)
-- Temi multipli e personalizzazione workspace
-- Export conversazioni e report fonti
+1. Hybrid search (`sqlite-vec`)
+2. Ottimizzazioni performance (liste virtualizzate)
+3. CI/CD packaging desktop
 
-## Next tasks consigliati
-1. Integrare parser file reali (PDF/DOCX/TXT/immagini OCR)
-2. Collegare un vector store locale per retrieval semantico reale
-3. Rendere click-to-source completamente sincronizzato con viewer e posizione evidenziata
+## Note operative
+- Il file richiesto `smotv2-migration*.md` non è presente nel repository corrente.
+- Fonte di verità attuale: questo PRD + handoff + report test.
 
