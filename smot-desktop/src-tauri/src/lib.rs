@@ -1,5 +1,6 @@
 mod auto_config;
 mod db;
+mod ollama;
 mod parsers;
 mod setup;
 mod system_probe;
@@ -342,6 +343,9 @@ pub fn run() {
   tauri::Builder::default()
     .manage(state)
     .invoke_handler(tauri::generate_handler![
+      ollama::get_ollama_status,
+      ollama::pull_ollama_model,
+      ollama::check_disk_space,
       get_system_status,
       get_modes,
       update_mode,
