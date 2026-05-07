@@ -60,12 +60,34 @@ Legacy (obsoleto ma mantenuto):
   - Testo secondario grigio-blu `#8a9bb5`
 - Aggiunte variabili CSS ufficiali (`--color-*`, `--gradient-primary`, `--gradient-bg`) senza modifiche a layout/logica.
 
+### Avanzamento Piano `main/.sisyphus/plans/smot-v2-migration.md` (2026-05-07)
+- Piano analizzato da branch `main` (via raw GitHub).
+- Stato task principali:
+  - ✅ **T1 Setup Tauri + Vite**: completato
+  - ✅ **T4 Porting UI React**: completato
+  - 🟡 **T13 UI integrazione Tauri API**: parziale (invoke + fallback browser, flussi ancora MOCKED)
+  - ✅ **T2 Schema SQLite**: completato in `src-tauri/migrations/001_initial.sql`
+  - ✅ **T3 Rust + SQLite dependencies/init**: completato (`rusqlite` + `src-tauri/src/db.rs` + init DB in startup)
+  - ⏳ **T5–T12, T14–T20**: non ancora implementati
+
+### Implementazione tecnica T2/T3
+- Aggiunta dipendenza `rusqlite` (`Cargo.toml`, feature `bundled`).
+- Creati script schema:
+  - `src-tauri/migrations/001_initial.sql`
+  - `src-tauri/scripts/init_db.sql`
+- Creato modulo `src-tauri/src/db.rs`:
+  - risoluzione path DB in `app_data_dir()`
+  - creazione cartella dati
+  - init schema su `smot.db`
+- Hook startup in `src-tauri/src/lib.rs` (`setup`) con inizializzazione SQLite e log path DB.
+
 ### Qualità e test
 - `yarn lint` ✅
 - `yarn build` ✅
 - Smoke screenshot UI su `http://127.0.0.1:1420` ✅
 - Testing agent report: `/app/test_reports/iteration_2.json` → **100% frontend pass** ✅
 - Verifica palette con `auto_frontend_testing_agent` ✅ (nessuna regressione funzionale)
+- Smoke post T2/T3 + `auto_frontend_testing_agent` ✅ (nessuna regressione UI)
 
 Nota ambiente:
 - `cargo` non disponibile nel container corrente (impossibile `cargo check` qui).
