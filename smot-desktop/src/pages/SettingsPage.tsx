@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
 import type { ModeData } from "../types";
@@ -8,14 +8,37 @@ interface SettingsPageProps {
   onModeChange: (mode: string) => void;
 }
 
-export default function SettingsPage({
-  modeData,
-  onModeChange,
-}: SettingsPageProps) {
+function Toggle({ checked, onChange, id }: { checked: boolean; onChange: () => void; id: string }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      id={id}
+      onClick={onChange}
+      className={`toggle-track${checked ? " toggle-on" : ""}`}
+      style={{ border: "none", padding: 0 }}
+    >
+      <span className="toggle-thumb" />
+    </button>
+  );
+}
+
+export default function SettingsPage({ modeData, onModeChange }: SettingsPageProps) {
   const { language } = useLanguage();
   const text = translations[language];
   const [autoChunk, setAutoChunk] = useState(true);
   const [resourceGuard, setResourceGuard] = useState(true);
+  const [saved, setSaved] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  const handleSave = () => {
+    setSaved(true);
+    btnRef.current?.classList.add("btn-saved");
+    setTimeout(() => {
+      setSaved(false);
+      btnRef.current?.classList.remove("btn-saved");
+    }, 700);
+  };
 
   return (
     <div className="page-grid" data-testid="settings-page">
@@ -26,9 +49,7 @@ export default function SettingsPage({
         </p>
 
         <div className="settings-group" data-testid="settings-mode-group">
-          <p className="card-label" data-testid="settings-mode-label">
-            Modalità hardware
-          </p>
+          <p className="card-label" data-testid="settings-mode-label">Modalità hardware</p>
           <div className="mode-chips" data-testid="settings-mode-options">
             {modeData.available_modes.map((mode) => (
               <button
@@ -44,32 +65,35 @@ export default function SettingsPage({
         </div>
 
         <div className="settings-group" data-testid="settings-options-group">
-          <label className="switch-row" data-testid="settings-autochunk-row">
-            <span data-testid="settings-autochunk-label">
+          <div className="switch-row" data-testid="settings-autochunk-row">
+            <label htmlFor="toggle-autochunk" data-testid="settings-autochunk-label" style={{ cursor: "pointer" }}>
               Chunking automatico adattivo
-            </span>
-            <input
-              type="checkbox"
+            </label>
+            <Toggle
+              id="toggle-autochunk"
               checked={autoChunk}
-              onChange={() => setAutoChunk((value) => !value)}
-              data-testid="settings-autochunk-toggle"
+              onChange={() => setAutoChunk(v => !v)}
             />
-          </label>
-          <label className="switch-row" data-testid="settings-resource-guard-row">
-            <span data-testid="settings-resource-guard-label">
+          </div>
+          <div className="switch-row" data-testid="settings-resource-guard-row">
+            <label htmlFor="toggle-resource" data-testid="settings-resource-guard-label" style={{ cursor: "pointer" }}>
               Protezione risorse in low-RAM
-            </span>
-            <input
-              type="checkbox"
+            </label>
+            <Toggle
+              id="toggle-resource"
               checked={resourceGuard}
-              onChange={() => setResourceGuard((value) => !value)}
-              data-testid="settings-resource-guard-toggle"
+              onChange={() => setResourceGuard(v => !v)}
             />
-          </label>
+          </div>
         </div>
 
-        <button className="action-button" data-testid="settings-save-button">
-          {text.saveSettings}
+        <button
+          ref={btnRef}
+          className="action-button"
+          onClick={handleSave}
+          data-testid="settings-save-button"
+        >
+          {saved ? "✓ Salvato" : text.saveSettings}
         </button>
       </section>
     </div>

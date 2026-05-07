@@ -3,15 +3,22 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
 import {
-  continueInBackground,
-  getIndexingStatus,
-  pauseIndexing,
-  resumeIndexing,
+  continueInBackground, getIndexingStatus, pauseIndexing, resumeIndexing,
 } from "../services/api";
 import type { IndexingStatus } from "../types";
 
 interface IndexingPageProps {
   onStatusUpdate: (status: IndexingStatus) => void;
+}
+
+function ChunkParticles() {
+  return (
+    <div className="chunk-particles" aria-hidden="true">
+      {Array.from({ length: 5 }, (_, i) => (
+        <span key={i} className="chunk-particle" />
+      ))}
+    </div>
+  );
 }
 
 export default function IndexingPage({ onStatusUpdate }: IndexingPageProps) {
@@ -23,9 +30,7 @@ export default function IndexingPage({ onStatusUpdate }: IndexingPageProps) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!jobId || jobId === "demo") {
-      return;
-    }
+    if (!jobId || jobId === "demo") return;
     const poll = async () => {
       try {
         const response = await getIndexingStatus(jobId);
@@ -35,7 +40,6 @@ export default function IndexingPage({ onStatusUpdate }: IndexingPageProps) {
         setError("Job non trovato. Avvia un caricamento prima.");
       }
     };
-
     void poll();
     const timer = setInterval(() => void poll(), 1200);
     return () => clearInterval(timer);
@@ -43,10 +47,7 @@ export default function IndexingPage({ onStatusUpdate }: IndexingPageProps) {
 
   const actionPauseResume = async () => {
     if (!status || !jobId) return;
-    if (status.status === "paused") {
-      await resumeIndexing(jobId);
-      return;
-    }
+    if (status.status === "paused") { await resumeIndexing(jobId); return; }
     await pauseIndexing(jobId);
   };
 
@@ -67,37 +68,32 @@ export default function IndexingPage({ onStatusUpdate }: IndexingPageProps) {
     );
   }
 
+  const isRunning = status?.status === "running";
+
   return (
     <div className="page-grid" data-testid="indexing-page">
       <section className="panel-card" data-testid="indexing-overview-card">
         <h1 data-testid="indexing-title">{text.indexingInProgress}</h1>
-        {error ? (
-          <p className="error-text" data-testid="indexing-error-message">
-            {error}
-          </p>
-        ) : null}
+        {isRunning && <ChunkParticles />}
+        {error ? <p className="error-text" data-testid="indexing-error-message">{error}</p> : null}
         {status ? (
           <>
             <p className="card-muted" data-testid="indexing-overall-progress-text">
-              Progresso complessivo: {status.overall_progress}% (
-              {status.completed_documents}/{status.total_documents})
+              Progresso complessivo: {status.overall_progress}% ({status.completed_documents}/{status.total_documents})
             </p>
             <div className="progress-track" data-testid="indexing-overall-progress-track">
               <div
-                className="progress-fill"
-                style={{ width: `${status.overall_progress}%` }}
+                className={`progress-fill${isRunning ? " upload-progress-bar" : ""}`}
+                style={isRunning ? {} : { width: `${status.overall_progress}%` }}
                 data-testid="indexing-overall-progress-fill"
               />
             </div>
             <p className="card-muted" data-testid="indexing-overview-meta">
-              ETA: {status.eta_seconds}s • Processato {status.processed_kb}/
-              {status.total_kb} KB
+              ETA: {status.eta_seconds}s • Processato {status.processed_kb}/{status.total_kb} KB
             </p>
           </>
         ) : (
-          <p className="card-muted" data-testid="indexing-loading-message">
-            Caricamento stato...
-          </p>
+          <p className="card-muted" data-testid="indexing-loading-message">Caricamento stato...</p>
         )}
       </section>
 
@@ -105,44 +101,22 @@ export default function IndexingPage({ onStatusUpdate }: IndexingPageProps) {
         <h2 data-testid="indexing-files-title">Document processing card</h2>
         <div className="list-stack" data-testid="indexing-files-list">
           {status?.files?.map((file) => (
-            <article
-              className="list-item static"
-              key={file.document_id}
-              data-testid={`index-file-row-${file.document_id}`}
-            >
-              <p data-testid={`index-file-name-${file.document_id}`}>
-                {file.document_name}
-              </p>
-              <p
-                className="card-muted"
-                data-testid={`index-file-progress-${file.document_id}`}
-              >
-                {file.file_progress}% • Chunk {file.chunk_done}/{file.chunk_total} •
-                Embedding {file.embedding_done}/{file.embedding_total}
+            <article className="list-item static" key={file.document_id} data-testid={`index-file-row-${file.document_id}`}>
+              <p data-testid={`index-file-name-${file.document_id}`}>{file.document_name}</p>
+              <p className="card-muted" data-testid={`index-file-progress-${file.document_id}`}>
+                {file.file_progress}% • Chunk {file.chunk_done}/{file.chunk_total} • Embedding {file.embedding_done}/{file.embedding_total}
               </p>
             </article>
           ))}
         </div>
         <div className="action-row" data-testid="indexing-action-row">
-          <button
-            className="action-button secondary"
-            onClick={() => void actionPauseResume()}
-            data-testid="indexing-pause-resume-button"
-          >
+          <button className="action-button secondary" onClick={() => void actionPauseResume()} data-testid="indexing-pause-resume-button">
             {status?.status === "paused" ? text.resume : text.pause}
           </button>
-          <button
-            className="action-button secondary"
-            onClick={() => void actionBackground()}
-            data-testid="indexing-background-button"
-          >
+          <button className="action-button secondary" onClick={() => void actionBackground()} data-testid="indexing-background-button">
             {text.continueBackground}
           </button>
-          <button
-            className="action-button"
-            onClick={() => navigate("/chat")}
-            data-testid="indexing-open-chat-button"
-          >
+          <button className="action-button" onClick={() => navigate("/chat")} data-testid="indexing-open-chat-button">
             {text.openChat}
           </button>
         </div>

@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { HardwareModeSelector } from "../components/HardwareModeSelector";
+import { useStaggerAnimation } from "../hooks/useAnimation";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
 import type { ModeData, ViewerDocument } from "../types";
@@ -11,9 +12,7 @@ interface DashboardPageProps {
 }
 
 export default function DashboardPage({
-  documents,
-  modeData,
-  onModeChange,
+  documents, modeData, onModeChange,
 }: DashboardPageProps) {
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -21,24 +20,29 @@ export default function DashboardPage({
   const indexedCount = documents.filter((doc) => doc.indexed).length;
   const totalSize = documents.reduce((sum, doc) => sum + doc.size_kb, 0) / 1024;
 
+  const stats = [
+    { label: "Documenti totali", value: String(documents.length), testId: "stat-total-documents" },
+    { label: "Indicizzati",      value: String(indexedCount),      testId: "stat-indexed-documents" },
+    { label: "Spazio totale",    value: `${totalSize.toFixed(2)} GB`, testId: "stat-total-storage" },
+  ];
+  const visible = useStaggerAnimation(stats.length, 120);
+
   return (
     <div className="page-grid" data-testid="dashboard-page">
       <section className="hero-panel" data-testid="dashboard-hero-panel">
         <h1 data-testid="dashboard-title">{text.welcomeTitle}</h1>
         <p data-testid="dashboard-subtitle">{text.welcomeSubtitle}</p>
         <div className="stats-grid" data-testid="dashboard-stats-grid">
-          <article className="stat-card" data-testid="stat-total-documents">
-            <p className="card-label">Documenti totali</p>
-            <p className="card-value">{documents.length}</p>
-          </article>
-          <article className="stat-card" data-testid="stat-indexed-documents">
-            <p className="card-label">Indicizzati</p>
-            <p className="card-value">{indexedCount}</p>
-          </article>
-          <article className="stat-card" data-testid="stat-total-storage">
-            <p className="card-label">Spazio totale</p>
-            <p className="card-value">{totalSize.toFixed(2)} GB</p>
-          </article>
+          {stats.map((s, i) => (
+            <article
+              key={s.testId}
+              className={`stat-card${visible[i] ? " anim-visible" : ""}`}
+              data-testid={s.testId}
+            >
+              <p className="card-label">{s.label}</p>
+              <p className="card-value">{s.value}</p>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -46,21 +50,28 @@ export default function DashboardPage({
         <h2 data-testid="quick-actions-title">{text.quickActions}</h2>
         <div className="action-row">
           <button
-            className="action-button"
+            className="action-button quick-action"
             onClick={() => navigate("/upload")}
             data-testid="quick-action-upload-button"
           >
             {text.uploadDocuments}
           </button>
           <button
-            className="action-button secondary"
+            className="action-button secondary quick-action"
             onClick={() => navigate("/chat")}
             data-testid="quick-action-chat-button"
           >
             {text.openChat}
           </button>
           <button
-            className="action-button secondary"
+            className="action-button secondary quick-action"
+            onClick={() => navigate("/graph")}
+            data-testid="quick-action-graph-button"
+          >
+            Graph View
+          </button>
+          <button
+            className="action-button secondary quick-action"
             onClick={() => navigate("/settings")}
             data-testid="quick-action-settings-button"
           >

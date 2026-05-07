@@ -1,8 +1,6 @@
 import {
-  useMemo,
-  useState,
-  type ChangeEvent,
-  type DragEvent,
+  useMemo, useState,
+  type ChangeEvent, type DragEvent,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { translations } from "../i18n/translations";
@@ -19,6 +17,7 @@ export default function UploadPage({ onRefreshDocuments }: UploadPageProps) {
   const text = translations[language];
   const [localFiles, setLocalFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
 
   const fileNames = useMemo(() => localFiles.map((file) => file.name), [localFiles]);
@@ -30,15 +29,13 @@ export default function UploadPage({ onRefreshDocuments }: UploadPageProps) {
 
   const handleDrop = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
+    setIsDragging(false);
     const dropped = Array.from(event.dataTransfer.files ?? []);
     setLocalFiles((prev) => [...prev, ...dropped]);
   };
 
   const beginIndexing = async () => {
-    if (!fileNames.length) {
-      setError("Aggiungi almeno un file prima di iniziare.");
-      return;
-    }
+    if (!fileNames.length) { setError("Aggiungi almeno un file prima di iniziare."); return; }
     try {
       setError("");
       setIsUploading(true);
@@ -57,17 +54,16 @@ export default function UploadPage({ onRefreshDocuments }: UploadPageProps) {
   return (
     <div className="page-grid" data-testid="upload-page">
       <section
-        className="upload-dropzone"
-        onDragOver={(event) => event.preventDefault()}
+        className={`upload-dropzone${isDragging ? " dropzone-active" : ""}`}
+        onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         data-testid="upload-dropzone"
       >
         <h1 data-testid="upload-page-title">{text.documentUpload}</h1>
         <p data-testid="upload-dropzone-title">{text.dragDropTitle}</p>
-        <p className="card-muted" data-testid="upload-dropzone-hint">
-          {text.dragDropHint}
-        </p>
-        <label className="action-button" data-testid="upload-file-picker-label">
+        <p className="card-muted" data-testid="upload-dropzone-hint">{text.dragDropHint}</p>
+        <label className="action-button" style={{ cursor: "pointer" }} data-testid="upload-file-picker-label">
           {text.chooseFiles}
           <input
             type="file"
@@ -87,7 +83,7 @@ export default function UploadPage({ onRefreshDocuments }: UploadPageProps) {
         <div className="list-stack" data-testid="upload-selected-files-list">
           {fileNames.length ? (
             fileNames.map((name) => (
-              <p className="list-item static" key={name} data-testid={`upload-selected-file-${name}`}>
+              <p className="list-item static file-item" key={name} data-testid={`upload-selected-file-${name}`}>
                 {name}
               </p>
             ))
@@ -97,17 +93,14 @@ export default function UploadPage({ onRefreshDocuments }: UploadPageProps) {
             </p>
           )}
         </div>
-        {error ? (
-          <p className="error-text" data-testid="upload-error-message">
-            {error}
-          </p>
-        ) : null}
+        {isUploading && (
+          <div className="progress-track" style={{ marginTop: 12 }} data-testid="upload-progress-track">
+            <div className="progress-fill upload-progress-bar" style={{ width: "100%" }} />
+          </div>
+        )}
+        {error ? <p className="error-text" data-testid="upload-error-message">{error}</p> : null}
         <div className="action-row" data-testid="upload-action-row">
-          <button
-            className="action-button secondary"
-            onClick={() => navigate("/")}
-            data-testid="upload-cancel-button"
-          >
+          <button className="action-button secondary" onClick={() => navigate("/")} data-testid="upload-cancel-button">
             {text.cancel}
           </button>
           <button
@@ -116,7 +109,7 @@ export default function UploadPage({ onRefreshDocuments }: UploadPageProps) {
             disabled={isUploading}
             data-testid="upload-start-indexing-button"
           >
-            {isUploading ? "..." : text.startIndexing}
+            {isUploading ? "Caricamento..." : text.startIndexing}
           </button>
         </div>
       </section>

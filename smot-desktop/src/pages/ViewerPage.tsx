@@ -11,7 +11,7 @@ const highlightText = (text: string, highlights: string[]): ReactNode => {
   return text.split(pattern).map((part, index) => {
     const isMatch = lowerHighlights.includes(part.toLowerCase());
     return isMatch ? (
-      <mark key={`${part}-${index}`}>{part}</mark>
+      <mark key={`${part}-${index}`} className="keyword-highlight">{part}</mark>
     ) : (
       <span key={`${part}-${index}`}>{part}</span>
     );
@@ -24,6 +24,7 @@ export default function ViewerPage() {
   const { documentId } = useParams();
   const [viewerData, setViewerData] = useState<ViewerPageData | null>(null);
   const [docList, setDocList] = useState<ViewerDocument[]>([]);
+  const [pageKey, setPageKey] = useState(0);
 
   const currentDocId = useMemo(() => {
     if (documentId) return documentId;
@@ -35,13 +36,14 @@ export default function ViewerPage() {
     return Number.isNaN(page) ? 1 : page;
   }, [location.search]);
 
-  useEffect(() => {
-    void getDocuments().then(setDocList);
-  }, []);
+  useEffect(() => { void getDocuments().then(setDocList); }, []);
 
   useEffect(() => {
     if (!currentDocId) return;
-    void getViewerPage(currentDocId, currentPage).then(setViewerData);
+    void getViewerPage(currentDocId, currentPage).then(data => {
+      setViewerData(data);
+      setPageKey(k => k + 1);
+    });
   }, [currentDocId, currentPage]);
 
   const goPage = (nextPage: number) => {
@@ -60,7 +62,11 @@ export default function ViewerPage() {
             Pagina {viewerData?.page ?? 0}/{viewerData?.total_pages ?? 0}
           </p>
         </div>
-        <div className="viewer-text" data-testid="viewer-document-text">
+        <div
+          key={pageKey}
+          className="viewer-text viewer-page-enter"
+          data-testid="viewer-document-text"
+        >
           {viewerData
             ? highlightText(viewerData.text, viewerData.highlights)
             : "Caricamento documento..."}
@@ -75,9 +81,7 @@ export default function ViewerPage() {
           </button>
           <button
             className="action-button secondary"
-            onClick={() =>
-              goPage(Math.min(viewerData?.total_pages ?? 1, currentPage + 1))
-            }
+            onClick={() => goPage(Math.min(viewerData?.total_pages ?? 1, currentPage + 1))}
             data-testid="viewer-next-page-button"
           >
             Pagina successiva
@@ -89,11 +93,7 @@ export default function ViewerPage() {
         <h2 data-testid="viewer-highlight-title">Parole chiave evidenziate</h2>
         <div className="chip-wrap" data-testid="viewer-highlight-list">
           {viewerData?.highlights?.map((term) => (
-            <span
-              className="keyword-chip"
-              key={term}
-              data-testid={`viewer-highlight-item-${term}`}
-            >
+            <span className="keyword-chip keyword-highlight" key={term} data-testid={`viewer-highlight-item-${term}`}>
               {term}
             </span>
           ))}

@@ -12,6 +12,16 @@ interface ChatMessage {
   content: string;
 }
 
+function ThinkingDots() {
+  return (
+    <div className="thinking-dots" aria-label="SMOT sta pensando...">
+      <span className="thinking-dot" />
+      <span className="thinking-dot" />
+      <span className="thinking-dot" />
+    </div>
+  );
+}
+
 export default function ChatPage() {
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -81,15 +91,21 @@ export default function ChatPage() {
             ))
           ) : (
             <p className="card-muted" data-testid="chat-empty-state-message">
-              Nessuna domanda inviata. Prova: “Quali sono i termini di pagamento
-              nel contratto?”
+              Nessuna domanda inviata. Prova: "Quali sono i termini di pagamento nel contratto?"
             </p>
+          )}
+          {loading && (
+            <article className="message assistant" data-testid="chat-thinking-indicator">
+              <p className="card-label">SMOT</p>
+              <ThinkingDots />
+            </article>
           )}
         </div>
         <div className="chat-input-row" data-testid="chat-input-row">
           <input
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void onSubmit(); }}
             placeholder={text.askQuestion}
             data-testid="chat-question-input"
           />
@@ -99,7 +115,7 @@ export default function ChatPage() {
             disabled={!canSend}
             data-testid="chat-send-button"
           >
-            {loading ? "..." : text.send}
+            {text.send}
           </button>
         </div>
       </section>
@@ -110,19 +126,14 @@ export default function ChatPage() {
           sources.map((source) => (
             <button
               key={`${source.document_id}-${source.page}`}
-              className="list-item"
-              onClick={() =>
-                navigate(`/viewer/${source.document_id}?page=${source.page}`)
-              }
+              className="list-item source-citation"
+              onClick={() => navigate(`/viewer/${source.document_id}?page=${source.page}`)}
               data-testid={`chat-source-item-${source.document_id}-${source.page}`}
             >
               <p data-testid={`chat-source-name-${source.document_id}`}>
                 {source.document_name}
               </p>
-              <p
-                className="card-muted"
-                data-testid={`chat-source-meta-${source.document_id}`}
-              >
+              <p className="card-muted" data-testid={`chat-source-meta-${source.document_id}`}>
                 p.{source.page} • {source.snippet}
               </p>
             </button>

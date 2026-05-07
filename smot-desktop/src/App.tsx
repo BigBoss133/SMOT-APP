@@ -8,6 +8,7 @@ import { useLanguage } from "./context/LanguageContext";
 import { translations } from "./i18n/translations";
 import ChatPage from "./pages/ChatPage";
 import DashboardPage from "./pages/DashboardPage";
+import GraphPage from "./pages/GraphPage";
 import IndexingPage from "./pages/IndexingPage";
 import SettingsPage from "./pages/SettingsPage";
 import UploadPage from "./pages/UploadPage";
@@ -53,13 +54,10 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-
     const bootstrap = async () => {
       try {
         const [docs, status, modes] = await Promise.all([
-          getDocuments(),
-          getSystemStatus(),
-          getModes(),
+          getDocuments(), getSystemStatus(), getModes(),
         ]);
         if (!active) return;
         setDocuments(docs);
@@ -72,15 +70,9 @@ export default function App() {
         setModeData(fallbackModes);
       }
     };
-
     void bootstrap();
-    const timer = setInterval(() => {
-      void refreshSystem();
-    }, 5000);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
+    const timer = setInterval(() => { void refreshSystem(); }, 5000);
+    return () => { active = false; clearInterval(timer); };
   }, [refreshSystem]);
 
   const changeMode = async (mode: string) => {
@@ -144,6 +136,7 @@ export default function App() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/viewer" element={<ViewerPage />} />
           <Route path="/viewer/:documentId" element={<ViewerPage />} />
+          <Route path="/graph" element={<GraphPage />} />
           <Route
             path="/settings"
             element={<SettingsPage modeData={modeData} onModeChange={changeMode} />}
