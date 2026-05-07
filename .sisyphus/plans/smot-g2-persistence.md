@@ -9,6 +9,69 @@
 
 ---
 
+## 🎨 Palette Colori SMOT (Estratta da Landing Page)
+
+Colori ufficiali del brand SMOT, estratti dal sito https://github.com/BigBoss133/SMOT-Landing-page:
+
+### Colori Principali
+
+| Colore | Hex | Uso | CSS Variable |
+|--------|-----|-----|--------------|
+| **Navy Scuro** | `#0a1a3b` | Sfondo principale, sidebar | `--color-bg-primary` |
+| **Indaco** | `#4338f5` | Gradienti, accenti primari | `--color-accent-primary` |
+| **Viola** | `#894df8` | Gradienti, hover states | `--color-accent-secondary` |
+| **Oliva/Giallo-verde** | `#bcc41c` | Highlights, keyword, badge AI | `--color-highlight` |
+| **Bianco** | `#ffffff` | Testo principale, icone | `--color-text-primary` |
+
+### Colori Secondari
+
+| Colore | Hex | Uso | CSS Variable |
+|--------|-----|-----|--------------|
+| **Grigio-blu** | `#8a9bb5` | Testo secondario, placeholder | `--color-text-secondary` |
+| **Bianco 8%** | `rgba(255,255,255,0.08)` | Bordi sottili, separatori | `--color-border` |
+| **Bianco 88%** | `rgba(10,26,59,0.88)` | Overlay, backdrop | `--color-overlay` |
+
+### Gradienti
+
+```css
+/* Gradiente principale (logo, hero) */
+--gradient-primary: linear-gradient(135deg, #4338f5 0%, #894df8 100%);
+
+/* Gradiente sfondo (opzionale) */
+--gradient-bg: radial-gradient(ellipse at top, #1e3a8a 0%, #0a1a3b 100%);
+```
+
+### Esempi d'Uso
+
+```css
+/* Layout principale */
+body { background: #0a1a3b; color: #ffffff; }
+
+/* Sidebar */
+.sidebar { background: #0a1a3b; border-right: 1px solid rgba(255,255,255,0.08); }
+
+/* Bottone primario */
+.btn-primary { 
+  background: linear-gradient(135deg, #4338f5, #894df8);
+  color: #ffffff;
+}
+
+/* Highlight/Keyword */
+.highlight { color: #bcc41c; font-weight: 600; }
+
+/* Testo secondario */
+.text-muted { color: #8a9bb5; }
+```
+
+### Note Implementazione
+
+- **Contrasto:** Testo bianco (#fff) su navy (#0a1a3b) = rapporto 12.5:1 ✅ (WCAG AAA)
+- **Highlight oliva:** Usare solo per keyword, badge, accenti (non per testo principale)
+- **Gradiente:** Usare per elementi importanti (CTA, logo, card hero)
+- **Bordi:** Sempre con opacità bassa (8%) per non essere invasivi
+
+---
+
 ## Cosa è Già Fatto (NON Toccare)
 
 ✅ **Tauri v2 scaffold** in `smot-desktop/`
