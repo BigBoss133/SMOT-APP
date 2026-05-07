@@ -119,8 +119,8 @@
 
 ## Metadata
 - **Created By**: testing_agent
-- **Version**: 1.1
-- **Test Sequence**: 2
+- **Version**: 1.2
+- **Test Sequence**: 3
 - **Last Updated**: 2026-05-07
 
 ---
@@ -152,6 +152,10 @@
 - **Agent**: testing
 - **Message**: Color palette verification completed successfully. All color requirements verified: (1) Sidebar dark navy #0a1a3b applied correctly, (2) Active navigation items show indigo/purple gradient #4338f5 -> #894df8, (3) Secondary text elements use gray-blue #8a9bb5, (4) Keyword highlights in viewer display olive #bcc41c, (5) Primary CTA buttons have correct gradient, (6) Navigation flow Dashboard -> Viewer -> Upload working without issues, (7) No blocking console errors detected. All functional requirements maintained - no regressions introduced by color palette changes.
 
+### Message 3
+- **Agent**: testing
+- **Message**: Post T2/T3 backend (SQLite init) smoke test completed successfully. All three verification requirements passed: (1) App loads correctly with smot-app-shell, (2) Navigation Dashboard -> Upload -> Chat functions without issues, (3) Zero blocking console errors detected. Application remains stable after backend implementation changes.
+
 ---
 
 ## Screenshots Captured
@@ -161,6 +165,9 @@
 4. `/app/.screenshots/05_viewer_page.png` - Viewer page with document
 5. `/app/.screenshots/06_settings_page.png` - Settings page with toggles
 6. `/app/.screenshots/color_palette_verification.png` - Color palette verification (Upload page with gradient active state)
+7. `/app/.screenshots/smoke_test_initial_load.png` - Post T2/T3 smoke test - Initial load
+8. `/app/.screenshots/smoke_test_upload_page.png` - Post T2/T3 smoke test - Upload page
+9. `/app/.screenshots/smoke_test_chat_page.png` - Post T2/T3 smoke test - Chat page
 
 ---
 

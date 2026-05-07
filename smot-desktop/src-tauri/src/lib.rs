@@ -1,3 +1,5 @@
+mod db;
+
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 
@@ -340,6 +342,9 @@ pub fn run() {
       get_viewer_page
     ])
     .setup(|app| {
+      let db_path = db::init_database(&app.handle())?;
+      log::info!("SQLite inizializzato: {}", db_path.display());
+
       if cfg!(debug_assertions) {
         app.handle().plugin(
           tauri_plugin_log::Builder::default()
