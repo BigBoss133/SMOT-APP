@@ -361,7 +361,7 @@ pub fn run() {
       parse_document_text
     ])
     .setup(|app| {
-      setup::on_app_startup(app)?;
+      setup::on_app_startup(app);
 
       if cfg!(debug_assertions) {
         app.handle().plugin(

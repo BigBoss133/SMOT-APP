@@ -15,15 +15,22 @@ pub struct Config {
     pub ai_enabled: bool,
 }
 
-pub fn on_app_startup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let app_data_dir = app.path().app_data_dir()?;
+pub fn on_app_startup(app: &mut tauri::App) {
+    let app_data_dir = match app.path().app_data_dir() {
+        Ok(dir) => dir,
+        Err(e) => { log::error!("Failed to get app data dir: {}", e); return; }
+    };
 
     for subdir in &["documents", "thumbnails", "logs"] {
-        fs::create_dir_all(app_data_dir.join(subdir))?;
+        if let Err(e) = fs::create_dir_all(app_data_dir.join(subdir)) {
+            log::warn!("Failed to create {} directory: {}", subdir, e);
+        }
     }
 
-    let db_path = crate::db::init_database(&app.handle())?;
-    log::info!("SQLite inizializzato: {}", db_path.display());
+    match crate::db::init_database(&app.handle()) {
+        Ok(db_path) => log::info!("SQLite inizializzato: {}", db_path.display()),
+        Err(e) => { log::error!("Failed to init database: {}", e); return; }
+    }
 
     let profile = system_probe::probe_system();
     let tier = auto_config::determine_tier(&profile);
@@ -39,19 +46,27 @@ pub fn on_app_startup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Er
     };
 
     let config_path = app_data_dir.join("config.json");
-    let config_json = serde_json::to_string_pretty(&config)?;
-    fs::write(&config_path, config_json)?;
-    log::info!("Config salvato: {}", config_path.display());
+    match serde_json::to_string_pretty(&config) {
+        Ok(json) => {
+            if let Err(e) = fs::write(&config_path, json) {
+                log::error!("Failed to write config: {}", e);
+            } else {
+                log::info!("Config salvato: {}", config_path.display());
+            }
+        }
+        Err(e) => log::error!("Failed to serialize config: {}", e),
+    }
 
     let handle = app.handle().clone();
-    let profile_json = serde_json::to_value(&profile)?;
+    let profile_json = match serde_json::to_value(&profile) {
+        Ok(json) => json,
+        Err(e) => { log::error!("Failed to serialize profile: {}", e); return; }
+    };
+
     std::thread::spawn(move || {
-        // Frontend needs a moment to mount before receiving the event
         std::thread::sleep(std::time::Duration::from_millis(500));
         let _ = handle.emit("first-launch", &profile_json);
     });
-
-    Ok(())
 }
 
 pub fn load_config(app: &tauri::AppHandle) -> Option<Config> {
