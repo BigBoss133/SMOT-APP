@@ -1,0 +1,53 @@
+name: Build Windows
+on:
+  push:
+    branches: [installer]
+    tags: ['v*']
+  pull_request:
+    branches: [installer]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install dependencies
+        run: cd smot-desktop && npm install
+      - name: Build app
+        run: cd smot-desktop && npm run tauri build
+
+      # === CODE SIGNING (disabled — requires EV certificate) ===
+      # To enable:
+      # 1. Purchase EV Code Signing Certificate (~$200-400/year from DigiCert/Sectigo)
+      # 2. Export as .pfx file, base64 encode it → WIN_CERT_BASE64 secret
+      # 3. Set WIN_CERT_PASSWORD secret in GitHub repo settings
+      # 4. Uncomment this step:
+      # - name: Sign Setup.exe
+      #   run: |
+      #     echo "${{ secrets.WIN_CERT_BASE64 }}" | base64 -d > certificate.pfx
+      #     signtool sign /fd SHA256 /a /f certificate.pfx /p "${{ secrets.WIN_CERT_PASSWORD }}" /tr http://timestamp.digicert.com /td SHA256 smot-desktop/src-tauri/target/release/bundle/nsis/*.exe
+      #     signtool sign /fd SHA256 /a /f certificate.pfx /p "${{ secrets.WIN_CERT_PASSWORD }}" /tr http://timestamp.digicert.com /td SHA256 smot-desktop/src-tauri/target/release/bundle/msi/*.msi
+      # - name: Sign SMOT.exe
+      #   run: |
+      #     signtool sign /fd SHA256 /a /f certificate.pfx /p "${{ secrets.WIN_CERT_PASSWORD }}" /tr http://timestamp.digicert.com /td SHA256 smot-desktop/src-tauri/target/release/smot.exe
+
+      - name: Upload Setup.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: smot-windows-setup
+          path: smot-desktop/src-tauri/target/release/bundle/nsis/*.exe
+      - name: Upload MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: smot-windows-msi
+          path: smot-desktop/src-tauri/target/release/bundle/msi/*.msi
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            smot-desktop/src-tauri/target/release/bundle/nsis/*.exe
+            smot-desktop/src-tauri/target/release/bundle/msi/*.msi

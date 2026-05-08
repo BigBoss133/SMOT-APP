@@ -1,6 +1,7 @@
 import { Languages, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useNavigate } from "react-router-dom";
+import { listen } from "@tauri-apps/api/event";
 import { RightSystemPanel } from "./components/RightSystemPanel";
 import { SidebarNav } from "./components/SidebarNav";
 import { StatusBar } from "./components/StatusBar";
@@ -10,6 +11,7 @@ import ChatPage from "./pages/ChatPage";
 import DashboardPage from "./pages/DashboardPage";
 import GraphPage from "./pages/GraphPage";
 import IndexingPage from "./pages/IndexingPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import SettingsPage from "./pages/SettingsPage";
 import UploadPage from "./pages/UploadPage";
 import ViewerPage from "./pages/ViewerPage";
@@ -27,6 +29,7 @@ const fallbackModes: ModeData = {
 };
 
 export default function App() {
+  const navigate = useNavigate();
   const { language, toggleLanguage } = useLanguage();
   const text = translations[language];
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
@@ -54,6 +57,8 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
+    let unlisten: (() => void) | undefined;
+
     const bootstrap = async () => {
       try {
         const [docs, status, modes] = await Promise.all([
@@ -70,10 +75,28 @@ export default function App() {
         setModeData(fallbackModes);
       }
     };
+
+    const setupListener = async () => {
+      unlisten = await listen("first-launch", () => {
+        navigate("/onboarding");
+      });
+    };
+
     void bootstrap();
-    const timer = setInterval(() => { void refreshSystem(); }, 5000);
-    return () => { active = false; clearInterval(timer); };
-  }, [refreshSystem]);
+    void setupListener();
+
+    const timer = setInterval(() => {
+      void refreshSystem();
+    }, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(timer);
+      if (unlisten) {
+        unlisten();
+      }
+    };
+  }, [refreshSystem, navigate]);
 
   const changeMode = async (mode: string) => {
     try {
@@ -115,6 +138,7 @@ export default function App() {
         </header>
 
         <Routes>
+          <Route path="/onboarding" element={<OnboardingPage />} />
           <Route
             path="/"
             element={

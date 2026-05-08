@@ -37,6 +37,39 @@
     ],
     "android": {
       "debugApplicationIdSuffix": ".debug"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["Italian", "English"],
+        "displayLanguageSelector": true,
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "assets/installer/installer-header.bmp",
+        "welcomeImage": "assets/installer/installer-welcome.bmp",
+        "createDesktopShortcut": true,
+        "shortcutName": "SMOT - Smart Archive",
+        "startMenuFolder": "SMOT"
+      },
+      "wix": {
+        "language": "it-IT"
+      }
+    },
+    "linux": {
+      "deb": {}
+    },
+    "macOS": {
+      "bundle": {}
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/BigBoss133/SMOT-APP/releases/latest/download/latest.json"
+      ],
+      "pubkey": "PLACEHOLDER_PUBLIC_KEY_REPLACE_AFTER_KEY_GENERATION",
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

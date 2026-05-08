@@ -1,0 +1,35 @@
+name: Build macOS
+on:
+  push:
+    branches: [installer]
+    tags: ['v*']
+  pull_request:
+    branches: [installer]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install dependencies
+        run: cd smot-desktop && npm install
+      - name: Install Tauri CLI
+        run: npm install -g @tauri-apps/cli
+      - name: Build app (Intel)
+        run: cd smot-desktop && npm run tauri build -- --target x86_64-apple-darwin
+      - name: Build app (Apple Silicon)
+        run: cd smot-desktop && npm run tauri build -- --target aarch64-apple-darwin
+      - name: Upload DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: smot-macos
+          path: smot-desktop/src-tauri/target/**/bundle/dmg/*.dmg
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            smot-desktop/src-tauri/target/**/bundle/dmg/*.dmg

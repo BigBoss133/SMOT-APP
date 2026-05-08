@@ -1,5 +1,9 @@
+mod auto_config;
 mod db;
+mod ollama;
 mod parsers;
+mod setup;
+mod system_probe;
 
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
@@ -339,6 +343,9 @@ pub fn run() {
   tauri::Builder::default()
     .manage(state)
     .invoke_handler(tauri::generate_handler![
+      ollama::get_ollama_status,
+      ollama::pull_ollama_model,
+      ollama::check_disk_space,
       get_system_status,
       get_modes,
       update_mode,
@@ -354,8 +361,7 @@ pub fn run() {
       parse_document_text
     ])
     .setup(|app| {
-      let db_path = db::init_database(&app.handle())?;
-      log::info!("SQLite inizializzato: {}", db_path.display());
+      setup::on_app_startup(app);
 
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -364,6 +370,9 @@ pub fn run() {
             .build(),
         )?;
       }
+
+      app.handle().plugin(tauri_plugin_updater::Builder::default().build())?;
+
       Ok(())
     })
     .run(tauri::generate_context!())
