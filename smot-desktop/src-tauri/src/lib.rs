@@ -370,6 +370,9 @@ pub fn run() {
             .build(),
         )?;
       }
+
+      app.handle().plugin(tauri_plugin_updater::Builder::default().build())?;
+
       Ok(())
     })
     .run(tauri::generate_context!())
