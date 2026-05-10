@@ -22,6 +22,7 @@ pub fn extract_document_text(path: PathBuf) -> Result<ParsedDocumentOutput, Stri
   match extension.as_str() {
     "pdf" => extract_pdf(path.as_path()),
     "docx" => extract_docx(path.as_path()),
+    "xlsx" => extract_xlsx(path.as_path()),
     _ => Err(format!("Formato non supportato dal parser: {}", extension)),
   }
 }
@@ -69,6 +70,62 @@ fn extract_docx(path: &Path) -> Result<ParsedDocumentOutput, String> {
     file_type: "docx".to_string(),
     text,
     page_count: None,
+    fallback_needed: false,
+    fallback_reason: None,
+  })
+}
+
+fn extract_xlsx(path: &Path) -> Result<ParsedDocumentOutput, String> {
+  use calamine::{Reader, Xlsx, open_workbook};
+  
+  let mut workbook: Xlsx<_> = open_workbook(path)
+    .map_err(|error| format!("Errore apertura XLSX: {error}"))?;
+  
+  let mut all_text = Vec::new();
+  let mut sheet_count = 0;
+  
+  for sheet_name in workbook.sheet_names().to_owned() {
+    sheet_count += 1;
+    if let Ok(range) = workbook.worksheet_range(&sheet_name) {
+      let mut sheet_text = format!("=== Sheet: {} ===\n", sheet_name);
+      
+      for row in range.rows() {
+        let row_values: Vec<String> = row
+          .iter()
+          .map(|cell| cell.to_string())
+          .filter(|s| !s.is_empty())
+          .collect();
+        
+        if !row_values.is_empty() {
+          sheet_text.push_str(&row_values.join("\t"));
+          sheet_text.push('\n');
+        }
+      }
+      
+      all_text.push(sheet_text);
+    }
+  }
+  
+  let merged_text = all_text.join("\n").trim().to_string();
+  
+  if merged_text.is_empty() {
+    return Ok(ParsedDocumentOutput {
+      file_path: path.display().to_string(),
+      file_type: "xlsx".to_string(),
+      text: String::new(),
+      page_count: Some(sheet_count),
+      fallback_needed: true,
+      fallback_reason: Some(
+        "File XLSX vuoto o senza dati leggibili.".to_string(),
+      ),
+    });
+  }
+
+  Ok(ParsedDocumentOutput {
+    file_path: path.display().to_string(),
+    file_type: "xlsx".to_string(),
+    text: merged_text,
+    page_count: Some(sheet_count),
     fallback_needed: false,
     fallback_reason: None,
   })

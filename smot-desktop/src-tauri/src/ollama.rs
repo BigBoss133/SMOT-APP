@@ -53,6 +53,7 @@ pub async fn pull_ollama_model(model: String, app: AppHandle) -> Result<(), Stri
     
     let bytes = resp.bytes().await.map_err(|e| e.to_string())?;
     let text = String::from_utf8_lossy(&bytes);
+    let start_time = std::time::Instant::now();
     
     for line in text.lines() {
         if let Ok(status) = serde_json::from_str::<serde_json::Value>(line) {
@@ -61,13 +62,23 @@ pub async fn pull_ollama_model(model: String, app: AppHandle) -> Result<(), Stri
             let percent = if total > 0.0 { (completed / total) * 100.0 } else { 0.0 };
             let status_str = status["status"].as_str().unwrap_or("downloading").to_string();
             
+            let elapsed_secs = start_time.elapsed().as_secs_f64().max(0.001);
+            let completed_mb = completed / 1_048_576.0;
+            let total_mb = total / 1_048_576.0;
+            let speed_mbps = completed_mb / elapsed_secs;
+            let eta_seconds = if speed_mbps > 0.01 {
+                ((total_mb - completed_mb) / speed_mbps) as i64
+            } else {
+                0
+            };
+            
             let progress = DownloadProgress {
                 model: model.clone(),
                 status: status_str,
                 percent,
-                downloaded_mb: completed / 1024.0 / 1024.0,
-                total_mb: total / 1024.0 / 1024.0,
-                eta_seconds: if percent > 0.0 { ((total - completed) / (completed / 5.0)) as i64 } else { 0 },
+                downloaded_mb: completed_mb,
+                total_mb,
+                eta_seconds,
                 error: None,
             };
             let _ = app.emit("model-download-progress", &progress);

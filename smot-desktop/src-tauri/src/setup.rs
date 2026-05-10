@@ -63,8 +63,8 @@ pub fn on_app_startup(app: &mut tauri::App) {
         Err(e) => { log::error!("Failed to serialize profile: {}", e); return; }
     };
 
-    std::thread::spawn(move || {
-        std::thread::sleep(std::time::Duration::from_millis(500));
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
         let _ = handle.emit("first-launch", &profile_json);
     });
 }

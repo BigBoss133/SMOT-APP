@@ -10,6 +10,13 @@ export default defineConfig({
     host: host || false,
     port: 1420,
     strictPort: true,
+    headers: {
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "X-XSS-Protection": "1; mode=block",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    },
     hmr: host
       ? {
           protocol: "ws",
