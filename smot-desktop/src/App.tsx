@@ -2,6 +2,7 @@ import { Languages, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import { listen } from "@tauri-apps/api/event";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { RightSystemPanel } from "./components/RightSystemPanel";
 import { SidebarNav } from "./components/SidebarNav";
 import { StatusBar } from "./components/StatusBar";
@@ -137,35 +138,37 @@ export default function App() {
           </div>
         </header>
 
-        <Routes>
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route
-            path="/"
-            element={
-              <DashboardPage
-                documents={documents}
-                modeData={modeData}
-                onModeChange={changeMode}
-              />
-            }
-          />
-          <Route
-            path="/upload"
-            element={<UploadPage onRefreshDocuments={refreshDocuments} />}
-          />
-          <Route
-            path="/indexing/:jobId"
-            element={<IndexingPage onStatusUpdate={() => void refreshDocuments()} />}
-          />
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/viewer" element={<ViewerPage />} />
-          <Route path="/viewer/:documentId" element={<ViewerPage />} />
-          <Route path="/graph" element={<GraphPage />} />
-          <Route
-            path="/settings"
-            element={<SettingsPage modeData={modeData} onModeChange={changeMode} />}
-          />
-        </Routes>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route
+              path="/"
+              element={
+                <DashboardPage
+                  documents={documents}
+                  modeData={modeData}
+                  onModeChange={changeMode}
+                />
+              }
+            />
+            <Route
+              path="/upload"
+              element={<UploadPage onRefreshDocuments={refreshDocuments} />}
+            />
+            <Route
+              path="/indexing/:jobId"
+              element={<IndexingPage onStatusUpdate={() => void refreshDocuments()} />}
+            />
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/viewer" element={<ViewerPage />} />
+            <Route path="/viewer/:documentId" element={<ViewerPage />} />
+            <Route path="/graph" element={<GraphPage />} />
+            <Route
+              path="/settings"
+              element={<SettingsPage modeData={modeData} onModeChange={changeMode} />}
+            />
+          </Routes>
+        </ErrorBoundary>
       </main>
 
       <RightSystemPanel status={systemStatus} />
