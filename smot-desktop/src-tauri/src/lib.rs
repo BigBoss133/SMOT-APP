@@ -142,37 +142,7 @@ struct ParseDocumentInput {
   file_path: String,
 }
 
-fn sample_documents() -> Vec<ViewerDocument> {
-  vec![
-    ViewerDocument {
-      id: "doc-1".to_string(),
-      name: "Contratto_Fornitura_2026.pdf".to_string(),
-      file_type: "PDF".to_string(),
-      category: "Lavoro".to_string(),
-      indexed: true,
-      size_kb: 1890,
-      pages: 8,
-    },
-    ViewerDocument {
-      id: "doc-2".to_string(),
-      name: "Piano_Studio_AI.docx".to_string(),
-      file_type: "DOCX".to_string(),
-      category: "Studio".to_string(),
-      indexed: true,
-      size_kb: 640,
-      pages: 4,
-    },
-    ViewerDocument {
-      id: "doc-3".to_string(),
-      name: "Spese_Casa_Q1.xlsx".to_string(),
-      file_type: "XLSX".to_string(),
-      category: "Personale".to_string(),
-      indexed: false,
-      size_kb: 420,
-      pages: 3,
-    },
-  ]
-}
+
 
 #[tauri::command]
 async fn get_system_status(state: tauri::State<'_, AppState>) -> Result<SystemStatus, String> {
@@ -244,8 +214,35 @@ fn update_mode(mode: String, state: tauri::State<AppState>) -> ModeData {
 }
 
 #[tauri::command]
-fn get_documents() -> Vec<ViewerDocument> {
-  sample_documents()
+fn get_documents(state: tauri::State<AppState>) -> Result<Vec<ViewerDocument>, String> {
+  let db = state.db.lock().map_err(|e| e.to_string())?;
+  let mut stmt = db
+    .prepare("SELECT id, filename, file_type, size_bytes, uploaded_at, indexed FROM documents ORDER BY uploaded_at DESC")
+    .map_err(|e| e.to_string())?;
+
+  let docs = stmt
+    .query_map([], |row| {
+      let id: String = row.get(0)?;
+      let filename: String = row.get(1)?;
+      let file_type: String = row.get(2)?;
+      let size_bytes: i64 = row.get(3)?;
+      let indexed: bool = row.get(5)?;
+
+      Ok(ViewerDocument {
+        id,
+        name: filename,
+        file_type,
+        category: String::new(),
+        indexed,
+        size_kb: (size_bytes / 1024) as u32,
+        pages: 0,
+      })
+    })
+    .map_err(|e| e.to_string())?
+    .filter_map(|r| r.ok())
+    .collect::<Vec<_>>();
+
+  Ok(docs)
 }
 
 #[tauri::command]
