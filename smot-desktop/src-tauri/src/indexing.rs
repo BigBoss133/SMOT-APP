@@ -276,10 +276,7 @@ pub async fn start_indexing(
 
         if parsed.text.trim().is_empty() {
             let conn = db.lock().unwrap_or_else(|e| e.into_inner());
-            let _ = conn.execute(
-                "UPDATE documents SET indexed = 1 WHERE id = ?1",
-                rusqlite::params![doc_id],
-            );
+            let _ = crate::db::update_indexing_status(&conn, doc_id);
             let mut st = controller.state.lock().unwrap_or_else(|e| e.into_inner());
             st.completed_documents += 1;
             continue;
@@ -373,10 +370,7 @@ pub async fn start_indexing(
 
         {
             let conn = db.lock().unwrap_or_else(|e| e.into_inner());
-            if let Err(e) = conn.execute(
-                "UPDATE documents SET indexed = 1 WHERE id = ?1",
-                rusqlite::params![doc_id],
-            ) {
+            if let Err(e) = crate::db::update_indexing_status(&conn, doc_id) {
                 log::warn!("Failed to mark document {} as indexed: {}", doc_id, e);
             }
         }

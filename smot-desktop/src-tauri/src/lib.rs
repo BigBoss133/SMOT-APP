@@ -218,32 +218,19 @@ fn update_mode(mode: String, state: tauri::State<AppState>) -> ModeData {
 #[tauri::command]
 fn get_documents(state: tauri::State<AppState>) -> Result<Vec<ViewerDocument>, String> {
   let db = state.db.lock().map_err(|e| e.to_string())?;
-  let mut stmt = db
-    .prepare("SELECT id, name, file_type, size_bytes, created_at, indexed FROM documents ORDER BY created_at DESC")
-    .map_err(|e| e.to_string())?;
-
-  let docs = stmt
-    .query_map([], |row| {
-      let id: String = row.get(0)?;
-      let filename: String = row.get(1)?;
-      let file_type: String = row.get(2)?;
-      let size_bytes: i64 = row.get(3)?;
-      let indexed: bool = row.get(5)?;
-
-      Ok(ViewerDocument {
-        id,
-        name: filename,
-        file_type,
-        category: String::new(),
-        indexed,
-        size_kb: (size_bytes / 1024) as u32,
-        pages: 0,
-      })
-    })
+  let docs = db::get_all_documents(&db)
     .map_err(|e| e.to_string())?
-    .filter_map(|r| r.ok())
-    .collect::<Vec<_>>();
-
+    .into_iter()
+    .map(|row| ViewerDocument {
+      id: row.id,
+      name: row.name,
+      file_type: row.file_type,
+      category: String::new(),
+      indexed: row.indexed,
+      size_kb: (row.size_bytes / 1024) as u32,
+      pages: 0,
+    })
+    .collect();
   Ok(docs)
 }
 
@@ -264,6 +251,12 @@ fn upload_documents(
   let mut uploaded = Vec::new();
 
   for file_path_str in &payload.files {
+    if file_path_str.trim().is_empty() {
+      return Err("Filename cannot be empty".to_string());
+    }
+    if file_path_str.contains("..") {
+      return Err(format!("Invalid path (path traversal not allowed): {}", file_path_str));
+    }
     let src = PathBuf::from(file_path_str);
     if !src.exists() {
       return Err(format!("File not found: {}", file_path_str));
@@ -290,10 +283,8 @@ fn upload_documents(
 
     let now = chrono::Utc::now().to_rfc3339();
     let relative_path = format!("documents/{}", dest_file_name);
-    db.execute(
-      "INSERT INTO documents (id, name, path, category, file_type, size_bytes, indexed, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, ?7)",
-      rusqlite::params![uuid, file_name, relative_path, payload.category, ext.to_uppercase(), file_size, now],
-    ).map_err(|e| format!("DB insert error: {}", e))?;
+    db::insert_document(&db, &uuid, &file_name, &relative_path, &payload.category, &ext.to_uppercase(), file_size, &now)
+      .map_err(|e| format!("DB insert error: {}", e))?;
 
     uploaded.push(UploadedDocument {
       id: uuid,
@@ -382,6 +373,9 @@ async fn chat_query(state: tauri::State<'_, AppState>, payload: ChatQueryInput) 
   if payload.question.trim().is_empty() {
     return Err("Query cannot be empty".to_string());
   }
+  if payload.question.len() > 1000 {
+    return Err("Query too long (max 1000 characters)".to_string());
+  }
 
   // --- DB operations (lock is dropped before async) ---
   let sources = {
@@ -397,36 +391,15 @@ async fn chat_query(state: tauri::State<'_, AppState>, payload: ChatQueryInput) 
   let mut sources = Vec::new();
 
   if !search_query.is_empty() {
-    let fts_sql = format!(
-      "SELECT c.document_id, d.name, c.chunk_index, snippet(fts_documents, 0, '<mark>', '</mark>', '...', 40) as snippet \
-       FROM fts_documents fts \
-       JOIN document_chunks c ON fts.rowid = c.rowid \
-       JOIN documents d ON c.document_id = d.id \
-       WHERE fts_documents MATCH ?1 \
-       ORDER BY rank \
-       LIMIT 5"
-    );
-
-    let mut stmt = db.prepare(&fts_sql).map_err(|e| e.to_string())?;
-
-    let rows = stmt.query_map(rusqlite::params![&search_query], |row| {
-      let doc_id: String = row.get(0)?;
-      let doc_name: String = row.get(1)?;
-      let chunk_idx: i64 = row.get(2)?;
-      let snippet_text: String = row.get(3)?;
-
-      Ok(ChatSource {
-        document_id: doc_id,
-        document_name: doc_name,
-        page: (chunk_idx as u8) + 1,
-        snippet: snippet_text,
-      })
-    }).map_err(|e| e.to_string())?;
-
-    for row in rows {
-      if let Ok(source) = row {
-        sources.push(source);
-      }
+    let results = db::search_fts5(&db, &search_query)
+      .map_err(|e| e.to_string())?;
+    for r in results {
+      sources.push(ChatSource {
+        document_id: r.document_id,
+        document_name: r.document_name,
+        page: (r.chunk_index as u8) + 1,
+        snippet: r.snippet,
+      });
     }
   }
 
@@ -490,6 +463,10 @@ fn get_viewer_page(
   state: tauri::State<'_, AppState>,
   payload: ViewerPageInput,
 ) -> Result<ViewerPageData, String> {
+  // Validate document_id is a valid UUID
+  uuid::Uuid::parse_str(&payload.document_id)
+    .map_err(|_| format!("Invalid document ID: {}", payload.document_id))?;
+
   // Look up document in DB for name and path
   let (doc_name, doc_path_str) = {
     let db = state.db.lock().map_err(|e| format!("DB lock error: {}", e))?;

@@ -46,6 +46,13 @@ pub async fn get_ollama_status() -> Result<OllamaStatus, String> {
 
 #[tauri::command]
 pub async fn pull_ollama_model(model: String, app: AppHandle) -> Result<(), String> {
+    if model.trim().is_empty() {
+        return Err("Model name cannot be empty".to_string());
+    }
+    if !model.chars().all(|c| c.is_ascii_alphanumeric() || c == ':' || c == '.' || c == '_' || c == '-') {
+        return Err(format!("Invalid model name: {}", model));
+    }
+
     let client = reqwest::Client::new();
     let resp = client.post("http://localhost:11434/api/pull")
         .json(&serde_json::json!({"name": &model, "stream": true}))
