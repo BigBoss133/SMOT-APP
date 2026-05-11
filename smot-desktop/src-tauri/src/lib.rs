@@ -76,17 +76,6 @@ struct StartIndexingResponse {
 }
 
 #[derive(Serialize)]
-struct IndexingFileStatus {
-  document_id: String,
-  document_name: String,
-  file_progress: u8,
-  chunk_done: u8,
-  chunk_total: u8,
-  embedding_done: u8,
-  embedding_total: u8,
-}
-
-#[derive(Serialize)]
 struct IndexingStatus {
   status: String,
   overall_progress: u8,
@@ -95,16 +84,12 @@ struct IndexingStatus {
   eta_seconds: u16,
   processed_kb: u16,
   total_kb: u16,
-  files: Vec<IndexingFileStatus>,
 }
 
 #[derive(Deserialize)]
-struct JobInput {
-  job_id: String,
+struct StartIndexingInput {
+  document_ids: Vec<String>,
 }
-
-#[derive(Serialize)]
-struct ChatSource {
   document_id: String,
   document_name: String,
   page: u8,
@@ -346,7 +331,6 @@ fn get_indexing_status(state: tauri::State<AppState>) -> IndexingStatus {
     eta_seconds: ctrl.eta_seconds as u16,
     processed_kb: 0,
     total_kb: 0,
-    files: vec![],
   }
 }
 
