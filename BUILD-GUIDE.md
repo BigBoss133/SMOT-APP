@@ -1,0 +1,164 @@
+# SMOT — Build & Run Guide
+
+> **Branch:** `release/v0.1.0-beta` | **Target:** Tutti gli OS (Windows, macOS, Linux)
+
+---
+
+## Prerequisiti
+
+### 1. Rust
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+### 2. Node.js v20+
+```bash
+# Verificare versione
+node --version   # Deve essere >= 20
+
+# Se serve aggiornare:
+npm install -g n
+sudo n 20
+hash -r
+```
+
+### 3. Git
+```bash
+git --version   # Deve essere installato
+```
+
+---
+
+## Setup per OS
+
+### macOS
+```bash
+# Xcode Command Line Tools (contiene tutto il necessario)
+xcode-select --install
+```
+Nessun altro passo — Xcode include tutto per compilare Tauri.
+
+### Linux (Ubuntu/Debian)
+```bash
+# GTK + WebKit + dipendenze Tauri
+sudo apt install -y \
+  libgtk-3-dev \
+  libwebkit2gtk-4.1-dev \
+  libayatana-appindicator3-dev \
+  librsvg2-dev \
+  libjavascriptcoregtk-4.1-dev \
+  libsoup-3.0-dev
+```
+
+### Windows
+```bash
+# 1. Installare Visual Studio Build Tools (o VS 2022)
+#    https://visualstudio.microsoft.com/downloads/
+#    Selezionare: "Desktop development with C++"
+
+# 2. WebView2 (pre-installato su Windows 10+)
+#    Se manca: https://developer.microsoft.com/en-us/microsoft-edge/webview2/
+
+# 3. (Opzionale) NSIS per installer .exe
+#    https://nsis.sourceforge.io/Download
+```
+
+---
+
+## Build
+
+```bash
+# 1. Clonare o passare al branch release
+cd ~/SMOT-APP
+git checkout release/v0.1.0-beta
+git pull origin release/v0.1.0-beta
+
+# 2. Installare dipendenze frontend
+cd smot-desktop
+npm install
+
+# 3. Build backend Rust
+cd src-tauri
+cargo build
+cd ..
+
+# 4. Build frontend + bundle
+npm run build
+```
+
+---
+
+## Run in Development Mode
+
+```bash
+cd smot-desktop
+npm run tauri dev
+```
+
+Questo avvia:
+- Backend Rust (compilato e avviato da Tauri)
+- Frontend React (Vite dev server su localhost:1420)
+- Finestra desktop dell'app
+
+---
+
+## Build per Release (.exe, .dmg, .AppImage)
+
+```bash
+cd smot-desktop
+npm run tauri build
+```
+
+L'installer si trova in:
+| OS | Path |
+|----|------|
+| **Windows** | `smot-desktop/src-tauri/target/release/bundle/nsis/SMOT-Beta_0.1.0-beta_x64-setup.exe` |
+| **macOS** | `smot-desktop/src-tauri/target/release/bundle/dmg/SMOT-Beta-0.1.0-beta.dmg` |
+| **Linux** | `smot-desktop/src-tauri/target/release/bundle/deb/smot-beta_0.1.0-beta_amd64.deb` |
+
+---
+
+## Quick Start (Tutto in una riga)
+
+### macOS
+```bash
+git checkout release/v0.1.0-beta && cd smot-desktop && npm install && npm run tauri dev
+```
+
+### Linux
+```bash
+git checkout release/v0.1.0-beta && sudo apt install libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev && cd smot-desktop && npm install && npm run tauri dev
+```
+
+### Windows (PowerShell)
+```powershell
+git checkout release/v0.1.0-beta; cd smot-desktop; npm install; npm run tauri dev
+```
+
+---
+
+## Troubleshooting
+
+| Errore | Soluzione |
+|--------|-----------|
+| `cargo build` fallisce con `pkg-config` su Linux | `sudo apt install libgtk-3-dev libwebkit2gtk-4.1-dev` |
+| `npm run build` fallisce con `CustomEvent is not defined` | Node.js troppo vecchio. Aggiornare con `n 20` |
+| `cargo build` fallisce con `unknown field X` | Tauri config non aggiornato. Assicurarsi di essere su `release/v0.1.0-beta` |
+| `tauri dev` non apre finestra | Verificare che Xcode (`xcode-select --install`) sia installato su macOS |
+| `Permission denied` su Linux | Aggiungere `--width 1600 --height 960` o eseguire senza restrizioni Wayland |
+| App si apre ma schermata bianca | La build frontend non e' stata completata. Rilanciare `npm install && npm run tauri dev` |
+
+---
+
+## Note Importanti
+
+- **macOS**: La prima volta che apri la .app, clicca **destro -> Apri** (non doppio click).
+  Poi il sistema chiede conferma una tantum.
+- **Windows**: Windows SmartScreen potrebbe mostrare un avviso. Clicca "Ulteriori informazioni" -> "Esegui comunque".
+- **Linux**: Potrebbe servire `--no-sandbox` se eseguito come root (non raccomandato).
+- **Ollama**: Opzionale. Se non installato, la chat funziona in modalita' solo-ricerca.
+- **Code signing**: Non attivo per la beta. L'app funziona ma mostra "Sviluppatore non verificato".
+
+---
+
+*SMOT — Il tuo archivio intelligente, sul tuo computer, solo per te.*
