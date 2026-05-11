@@ -1,30 +1,29 @@
 # SMOT-APP — Piano Lavoro Team (Michele · Salvatore · Tommaso)
 
-> **Data:** 11 Maggio 2026 22:00 | **Repo:** BigBoss133/SMOT-APP
-> **OpenCode Ready** — Ogni task è delegabile con `/start-work`
+> **Data:** 11 Maggio 2026 23:00 | **Repo:** BigBoss133/SMOT-APP
 
 ---
 
-## 📊 Stato Generale
+## Stato Generale
 
 ```
 Michele    ████████████████ 100% (15/15) ✅ COMPLETATO
-Salvatore  ████████░░░░░░░░  70% (7/10)  ⏳ Fix wizard rimanenti
+Salvatore  ████████████████ 100% (10/10) ✅ COMPLETATO
 Tommaso    ░░░░░░░░░░░░░░░░   0% (0/9)   ⏳ Da iniziare
 ```
 
 ### Michele ✅
-- 10 comandi Rust stub → reali
+- 10 comandi Rust stub -> reali
 - Indexing pipeline (indexing.rs, 395 righe)
 - Branch release/v0.1.0-beta con chiave updater
 - Fix setup.rs onboarding + Apple Silicon detection
 
-### Salvatore (7/10)
+### Salvatore ✅
 - ✅ ErrorBoundary, Skeleton, EmptyState, ConfirmDialog, Toast, Indexing events
 - ✅ Directory orfane rimosse
-- ⏳ FIX-4: App.tsx wizard full-screen
-- ⏳ FIX-5: OnboardingPage completion
-- ⏳ FIX-6: SystemDiscoveryStep unified memory
+- ✅ FIX-4: App.tsx wizard full-screen
+- ✅ FIX-5: OnboardingPage completion
+- ✅ FIX-6: SystemDiscoveryStep unified memory
 
 ### Tommaso (0/9)
 - ⏳ C3: Archiviare piani obsoleti
@@ -37,11 +36,11 @@ Tommaso    ░░░░░░░░░░░░░░░░   0% (0/9)   ⏳ Da 
 
 | Piano | Per | File | Task |
 |---|---|---|---|
-| **Michele** | Backend | `smot-michele-backend.md` | ✅ 15/15 |
-| **Salvatore** | Frontend | `smot-salvatore-frontend.md` | ✅ 7/7 + ⏳ 3 |
-| **Tommaso** | DB & Security | `smot-tommaso-db-security.md` | 0/9 |
-| **Installer Fix** | Tutti | `smot-installer-fix.md` | 5/8 |
-| **Release Beta** | Team | `smot-release-beta.md` | 5/12 |
+| **Michele** | Backend | smot-michele-backend.md | 15/15 |
+| **Salvatore** | Frontend | smot-salvatore-frontend.md | 10/10 |
+| **Tommaso** | DB & Security | smot-tommaso-db-security.md | 0/9 |
+| **Installer Fix** | Tutti | smot-installer-fix.md | 8/8 |
+| **Release Beta** | Team | smot-release-beta.md | 5/12 |
 
 ---
 
@@ -49,10 +48,6 @@ Tommaso    ░░░░░░░░░░░░░░░░   0% (0/9)   ⏳ Da 
 
 | Layer | Comando | Risultato |
 |-------|---------|-----------|
-| Rust | `cargo build` | ✅ |
-| TS | `npx tsc --noEmit` | ✅ |
-| Frontend | `npm run build` | ✅ 321KB |
-
----
-
-> Per iniziare: `/start-work smot-salvatore-frontend` o `/start-work smot-tommaso-db-security`
+| Rust | cargo build | ✅ |
+| TS | npx tsc --noEmit | ✅ |
+| Frontend | npm run build | ✅ 321KB |
