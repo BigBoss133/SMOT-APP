@@ -13,14 +13,28 @@ pub fn determine_tier(profile: &SystemProfile) -> Tier {
     let ram = profile.ram_total_gb;
     let gpu_vram = profile.gpu_vram_gb.unwrap_or(0.0);
 
-    if ram >= 16.0 && gpu_vram >= 4.0 {
-        Tier::Premium
-    } else if ram >= 8.0 {
-        Tier::Standard
-    } else if ram >= 4.0 {
-        Tier::Essential
+    // Apple Silicon: memoria unificata, nessuna VRAM dedicata
+    if profile.is_unified_memory {
+        if ram >= 16.0 {
+            Tier::Premium
+        } else if ram >= 8.0 {
+            Tier::Standard
+        } else if ram >= 4.0 {
+            Tier::Essential
+        } else {
+            Tier::Minimal
+        }
     } else {
-        Tier::Minimal
+        // GPU dedicata: usa VRAM per determinare il tier
+        if ram >= 16.0 && gpu_vram >= 4.0 {
+            Tier::Premium
+        } else if ram >= 8.0 {
+            Tier::Standard
+        } else if ram >= 4.0 {
+            Tier::Essential
+        } else {
+            Tier::Minimal
+        }
     }
 }
 

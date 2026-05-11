@@ -581,7 +581,8 @@ pub fn run() {
       continue_in_background,
       chat_query,
       get_viewer_page,
-      parse_document_text
+      parse_document_text,
+      setup::complete_onboarding
     ])
     .setup(|app| {
       let db_path = db::init_database(&app.handle())?;

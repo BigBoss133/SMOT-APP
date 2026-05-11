@@ -2,6 +2,7 @@ use crate::auto_config::{self, Tier};
 use crate::system_probe;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::path::PathBuf;
 use tauri::{Emitter, Manager};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -13,6 +14,28 @@ pub struct Config {
     pub language: String,
     pub license: Option<String>,
     pub ai_enabled: bool,
+}
+
+pub fn config_path(app: &tauri::App) -> Result<PathBuf, String> {
+    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    Ok(app_data_dir.join("config.json"))
+}
+
+pub fn load_config_from_path(path: &PathBuf) -> Option<Config> {
+    fs::read_to_string(path).ok().and_then(|content| serde_json::from_str(&content).ok())
+}
+
+pub fn save_config(path: &PathBuf, config: &Config) {
+    match serde_json::to_string_pretty(config) {
+        Ok(json) => {
+            if let Err(e) = fs::write(path, json) {
+                log::error!("Failed to write config: {}", e);
+            } else {
+                log::info!("Config salvato: {}", path.display());
+            }
+        }
+        Err(e) => log::error!("Failed to serialize config: {}", e),
+    }
 }
 
 pub fn on_app_startup(app: &mut tauri::App) {
@@ -28,10 +51,24 @@ pub fn on_app_startup(app: &mut tauri::App) {
     }
 
     match crate::db::init_database(&app.handle()) {
-        Ok(db_path) => log::info!("SQLite inizializzato: {}", db_path.display()),
+        Ok(_) => log::info!("SQLite inizializzato"),
         Err(e) => { log::error!("Failed to init database: {}", e); return; }
     }
 
+    let config_path = app_data_dir.join("config.json");
+    let is_first_run = !config_path.exists();
+
+    if !is_first_run {
+        // Config esiste gia' — controlla se onboarding gia' completato
+        if let Some(config) = load_config_from_path(&config_path) {
+            if config.onboarding_completed {
+                log::info!("Onboarding gia' completato, salto wizard");
+                return;
+            }
+        }
+    }
+
+    // Primo avvio o onboarding non completato: crea config, emetti evento
     let profile = system_probe::probe_system();
     let tier = auto_config::determine_tier(&profile);
 
@@ -45,17 +82,7 @@ pub fn on_app_startup(app: &mut tauri::App) {
         ai_enabled: tier.supports_ai(),
     };
 
-    let config_path = app_data_dir.join("config.json");
-    match serde_json::to_string_pretty(&config) {
-        Ok(json) => {
-            if let Err(e) = fs::write(&config_path, json) {
-                log::error!("Failed to write config: {}", e);
-            } else {
-                log::info!("Config salvato: {}", config_path.display());
-            }
-        }
-        Err(e) => log::error!("Failed to serialize config: {}", e),
-    }
+    save_config(&config_path, &config);
 
     let handle = app.handle().clone();
     let profile_json = match serde_json::to_value(&profile) {
@@ -74,4 +101,16 @@ pub fn load_config(app: &tauri::AppHandle) -> Option<Config> {
     let config_path = app_data_dir.join("config.json");
     let content = fs::read_to_string(&config_path).ok()?;
     serde_json::from_str(&content).ok()
+}
+
+#[tauri::command]
+pub fn complete_onboarding(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let app_data_dir = app_handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    let config_path = app_data_dir.join("config.json");
+    let content = fs::read_to_string(&config_path).map_err(|e| format!("Cannot read config: {}", e))?;
+    let mut config: Config = serde_json::from_str(&content).map_err(|e| format!("Cannot parse config: {}", e))?;
+    config.onboarding_completed = true;
+    save_config(&config_path, &config);
+    log::info!("Onboarding completato!");
+    Ok(())
 }
