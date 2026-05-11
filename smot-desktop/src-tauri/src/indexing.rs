@@ -152,9 +152,10 @@ pub async fn start_indexing(
                 return;
             }
         };
-        let mut stmt = match conn.prepare(
+        let mut stmt = conn.prepare(
             "SELECT id, name, path FROM documents WHERE indexed = 0"
-        ) {
+        );
+        let mut stmt = match stmt {
             Ok(s) => s,
             Err(e) => {
                 let mut st = controller.state.lock().unwrap_or_else(|e| e.into_inner());
@@ -163,10 +164,22 @@ pub async fn start_indexing(
                 return;
             }
         };
-        match stmt.query_map([], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
-        }) {
-            Ok(rows) => rows.filter_map(|r| r.ok()).collect(),
+        let rows = stmt.query_map([], |row| {
+            let id: String = row.get(0)?;
+            let name: String = row.get(1)?;
+            let path: String = row.get(2)?;
+            Ok((id, name, path))
+        });
+        match rows {
+            Ok(rows) => {
+                let mut result = Vec::new();
+                for r in rows {
+                    if let Ok(item) = r {
+                        result.push(item);
+                    }
+                }
+                result
+            }
             Err(e) => {
                 let mut st = controller.state.lock().unwrap_or_else(|e| e.into_inner());
                 st.status = "error".to_string();
@@ -342,7 +355,7 @@ pub async fn start_indexing(
             let completed_docs = doc_idx as u32;
             let remaining_docs = total.saturating_sub(completed_docs + 1);
             let eta = if completed_docs > 0 {
-                (elapsed / completed_docs) * remaining_docs as u64
+                (elapsed / completed_docs as u64) * remaining_docs as u64
             } else {
                 0
             };

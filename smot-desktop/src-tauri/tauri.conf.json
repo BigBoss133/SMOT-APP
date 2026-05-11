@@ -44,11 +44,7 @@
         "languages": ["Italian", "English"],
         "displayLanguageSelector": true,
         "installerIcon": "icons/icon.ico",
-        "headerImage": "assets/installer/installer-header.bmp",
-        "welcomeImage": "assets/installer/installer-welcome.bmp",
-        "createDesktopShortcut": true,
-        "shortcutName": "SMOT - Smart Archive",
-        "startMenuFolder": "SMOT"
+        "headerImage": "assets/installer/installer-header.bmp"
       },
       "wix": {
         "language": "it-IT"
@@ -57,9 +53,7 @@
     "linux": {
       "deb": {}
     },
-    "macOS": {
-      "bundle": {}
-    }
+    "macOS": {}
   },
   "plugins": {
     "updater": {

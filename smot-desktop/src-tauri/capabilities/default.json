@@ -14,20 +14,7 @@
     "core:event:allow-listen",
     "core:event:allow-emit",
     "updater:default",
-    "dialog:default",
-    "dialog:allow-open",
-    "dialog:allow-save",
-    "fs:default",
-    "fs:allow-app-read",
-    "fs:allow-app-write",
-    "fs:allow-app-meta",
-    "fs:allow-read-file",
-    "fs:allow-write-file",
-    "http:default",
-    {
-      "identifier": "http:allow-fetch",
-      "allow": [{ "url": "http://localhost:11434/*" }]
-    },
-    "path:default"
+    "log:default",
+    "core:path:default"
   ]
 }

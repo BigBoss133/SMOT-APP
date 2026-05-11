@@ -151,7 +151,7 @@ async fn get_system_status(state: tauri::State<'_, AppState>) -> Result<SystemSt
   let mut sys = System::new_all();
   sys.refresh_all();
 
-  let cpu = sys.global_cpu_info().cpu_usage() as u8;
+  let cpu = sys.global_cpu_usage() as u8;
   let ram_total = sys.total_memory() as f32 / 1073741824.0;
   let ram_used = (sys.total_memory() - sys.available_memory()) as f32 / 1073741824.0;
 
@@ -383,6 +383,8 @@ async fn chat_query(state: tauri::State<'_, AppState>, payload: ChatQueryInput) 
     return Err("Query cannot be empty".to_string());
   }
 
+  // --- DB operations (lock is dropped before async) ---
+  let sources = {
   let db = state.db.lock().map_err(|e| e.to_string())?;
 
   // Build FTS5 search query from user question words
@@ -427,6 +429,9 @@ async fn chat_query(state: tauri::State<'_, AppState>, payload: ChatQueryInput) 
       }
     }
   }
+
+  sources
+  }; // DB lock is DROPPED here
 
   // Build context from sources
   let context = sources.iter()

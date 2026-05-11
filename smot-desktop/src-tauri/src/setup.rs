@@ -2,7 +2,7 @@ use crate::auto_config::{self, Tier};
 use crate::system_probe;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Config {
@@ -36,7 +36,7 @@ pub fn on_app_startup(app: &mut tauri::App) {
     let tier = auto_config::determine_tier(&profile);
 
     let config = Config {
-        tier,
+        tier: tier.clone(),
         profile: profile.clone(),
         onboarding_completed: false,
         first_launch: chrono::Local::now().to_rfc3339(),
