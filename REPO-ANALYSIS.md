@@ -1,10 +1,10 @@
 # 🔍 SMOT-APP — Analisi Completa Repository
 
-> **🔄 Aggiornamento 7 Maggio 2026 — Fix Installer Completati**
+> **🔄 Aggiornamento 11 Maggio 2026 — Fix Installer Completati**
 >
 > Tutti i 5 fix critici sono stati implementati localmente. 3 commit in attesa di push su GitHub (token scaduto).
 
-> **Data:** 7 Maggio 2026 | **Repo:** [BigBoss133/SMOT-APP](https://github.com/BigBoss133/SMOT-APP)
+> **Data:** 11 Maggio 2026 | **Repo:** [BigBoss133/SMOT-APP](https://github.com/BigBoss133/SMOT-APP)
 
 ---
 
@@ -18,7 +18,7 @@
 
 ---
 
-## 📦 BRANCH: `main`
+## 📦 BRANCH: `main` (vedi anche: [Piano Team](.sisyphus/plans/smot-team-plan.md))
 
 ### Stato Attuale
 Scaffold Tauri v2 + React 19 funzionante. **Tutti i comandi backend restituiscono dati mock/finti.**
@@ -37,11 +37,11 @@ Scaffold Tauri v2 + React 19 funzionante. **Tutti i comandi backend restituiscon
 ### Problemi Critici
 | # | Problema | Severità |
 |---|---------|----------|
-| M1 | `get_system_status` restituisce dati hardcoded (ram_used: 6.4, cpu: 21%) | 🔴 |
-| M2 | `chat_query` non usa Ollama — risposta finta hardcoded | 🔴 |
-| M3 | `get_documents` restituisce 3 documenti fake, non legge da SQLite | 🔴 |
-| M4 | `get_indexing_status` è completamente simulato | 🔴 |
-| M5 | `upload_documents` non salva realmente i file | 🔴 |
+| M1 | `get_system_status| 🔴 Da implementare (vedi team plan)` restituisce dati hardcoded (ram_used: 6.4, cpu: 21%) | 🔴 |
+| M2 | `chat_query| 🔴 Da implementare (vedi team plan)` non usa Ollama — risposta finta hardcoded | 🔴 |
+| M3 | `get_documents| 🔴 Da implementare (vedi team plan)` restituisce 3 documenti fake, non legge da SQLite | 🔴 |
+| M4 | `get_indexing_status| 🔴 Da implementare (vedi team plan)` è completamente simulato | 🔴 |
+| M5 | `upload_documents| 🔴 Da implementare (vedi team plan)` non salva realmente i file | 🔴 |
 | M6 | Nessun auto-update configurato | 🟡 |
 | M7 | Nessuna firma codice | 🟡 |
 | M8 | GPU detection assente in `system_probe.rs` (NON presente su main) | N/A* |
@@ -98,7 +98,7 @@ Scaffold Tauri v2 + React 19 funzionante. **Tutti i comandi backend restituiscon
 | **Rust** | `system_probe.rs`, `auto_config.rs`, `setup.rs`, `ollama.rs` |
 | **Wizard** | `OnboardingPage.tsx` + 6 componenti onboarding |
 | **CI/CD** | `.github/workflows/` (Windows, macOS, Linux) |
-| **Docs** | `code-signing.md`, `installer-test-plan.md`, `installer-status.md` |
+| **Docs** | `code-signing.md`, `installer-test-plan.md` |
 
 ### Verifiche Superate
 - ✅ TypeScript: 0 errori (`tsc -b`)
@@ -176,6 +176,16 @@ Obiettivo: Primo installer funzionante scaricabile da GitHub Releases.
 
 ---
 
+
+### 🗑️ File Eliminati (11 Maggio 2026)
+
+| File | Motivo |
+|------|--------|
+| `CODE-REVIEW-FIXES.md` | AI-generated verbose doc (77KB). Fix già applicati nei commit. |
+| `installer-status.md` | Obsoleto — installer già mergiato in main |
+| `test_result.md` | Vecchi test superati |
+
+---
 ## 📋 Riepilogo Fix per Piano
 
 | ID | Task | Branch | File |
@@ -193,7 +203,7 @@ Obiettivo: Primo installer funzionante scaricabile da GitHub Releases.
 
 ---
 
-## ✅ Fix Completati (7 Maggio 2026)
+## ✅ Fix Completati (11 Maggio 2026)
 
 | Fix | Descrizione | Commit | File Modificati |
 |-----|------------|--------|-----------------|
@@ -218,4 +228,4 @@ bac66af fix(installer): wire BMP assets to NSIS and add auto-updater plugin
 
 ---
 
-*Analisi generata il 7 Maggio 2026 — da aggiornare dopo ogni sessione di lavoro.*
+*Analisi generata il 11 Maggio 2026 — da aggiornare dopo ogni sessione di lavoro.*
