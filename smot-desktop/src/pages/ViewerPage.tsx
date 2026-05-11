@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getDocuments, getViewerPage } from "../services/api";
+import Skeleton from "../components/Skeleton";
 import type { ViewerDocument, ViewerPageData } from "../types";
 
 const highlightText = (text: string, highlights: string[]): ReactNode => {
@@ -69,7 +70,11 @@ export default function ViewerPage() {
         >
           {viewerData
             ? highlightText(viewerData.text, viewerData.highlights)
-            : "Caricamento documento..."}
+            : (
+              <div data-testid="viewer-skeleton">
+                <Skeleton count={8} height={16} variant="text" />
+              </div>
+            )}
         </div>
         <div className="action-row" data-testid="viewer-navigation-row">
           <button

@@ -3,6 +3,8 @@ import { listen } from "@tauri-apps/api/event";
 import { Brain, Download, Trash2, AlertCircle } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
+import { useToast } from "../hooks/useToast";
+import ConfirmDialog from "../components/ConfirmDialog";
 import type { ModeData } from "../types";
 import { getOllamaStatus, pullModel, checkDiskSpace, type OllamaStatus, type DownloadProgress } from "../services/ollama";
 
@@ -29,14 +31,17 @@ function Toggle({ checked, onChange, id }: { checked: boolean; onChange: () => v
 export default function SettingsPage({ modeData, onModeChange }: SettingsPageProps) {
   const { language } = useLanguage();
   const text = translations[language];
+  const toast = useToast();
   const [autoChunk, setAutoChunk] = useState(true);
   const [resourceGuard, setResourceGuard] = useState(true);
   const [saved, setSaved] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const [modelToDelete, setModelToDelete] = useState<string | null>(null);
 
   const handleSave = () => {
     setSaved(true);
     btnRef.current?.classList.add("btn-saved");
+    toast.success(text.settingsSaved);
     setTimeout(() => {
       setSaved(false);
       btnRef.current?.classList.remove("btn-saved");
@@ -68,6 +73,7 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
         setDownloadProgress(progress);
         if (progress.status === "complete") {
           setDownloadingModel(null);
+          toast.success(text.modelDownloaded);
           void fetchStatus();
         }
       });
@@ -363,6 +369,7 @@ const isModelInstalled = (modelId: string) => {
                           cursor: "pointer",
                         }}
                         type="button"
+                        onClick={() => setModelToDelete(model)}
                       >
                         <Trash2 size={14} />
                         {text.deleteModel}
@@ -375,6 +382,19 @@ const isModelInstalled = (modelId: string) => {
           </>
         )}
       </section>
+
+      <ConfirmDialog
+        open={!!modelToDelete}
+        title={text.deleteModel}
+        message={text.deleteModelConfirm}
+        confirmLabel={text.deleteModel}
+        confirmVariant="danger"
+        onConfirm={() => {
+          // TODO: wire to actual model deletion API when available
+          setModelToDelete(null);
+        }}
+        onCancel={() => setModelToDelete(null)}
+      />
     </div>
   );
 }

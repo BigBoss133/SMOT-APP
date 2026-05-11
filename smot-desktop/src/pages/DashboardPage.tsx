@@ -1,8 +1,12 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FileText } from "lucide-react";
 import { HardwareModeSelector } from "../components/HardwareModeSelector";
 import { useStaggerAnimation } from "../hooks/useAnimation";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
+import EmptyState from "../components/EmptyState";
+import Skeleton from "../components/Skeleton";
 import type { ModeData, ViewerDocument } from "../types";
 
 interface DashboardPageProps {
@@ -17,6 +21,13 @@ export default function DashboardPage({
   const navigate = useNavigate();
   const { language } = useLanguage();
   const text = translations[language];
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
+
   const indexedCount = documents.filter((doc) => doc.indexed).length;
   const totalSize = documents.reduce((sum, doc) => sum + doc.size_kb, 0) / 1024;
 
@@ -84,29 +95,45 @@ export default function DashboardPage({
 
       <section className="panel-card" data-testid="dashboard-recent-documents-card">
         <h2 data-testid="recent-documents-title">{text.recentDocuments}</h2>
-        <div className="list-stack" data-testid="recent-documents-list">
-          {documents.slice(0, 5).map((doc) => (
-            <button
-              className="list-item"
-              key={doc.id}
-              onClick={() => navigate(`/viewer/${doc.id}`)}
-              data-testid={`recent-document-item-${doc.id}`}
-            >
-              <div>
-                <p data-testid={`recent-document-name-${doc.id}`}>{doc.name}</p>
-                <p className="card-muted" data-testid={`recent-document-meta-${doc.id}`}>
-                  {doc.file_type} • {doc.category}
-                </p>
-              </div>
-              <span
-                className={doc.indexed ? "tag-success" : "tag-warning"}
-                data-testid={`recent-document-status-${doc.id}`}
+        {isLoading ? (
+          <div style={{ padding: "16px 0" }} data-testid="dashboard-skeleton">
+            <Skeleton count={4} height={48} variant="rect" />
+          </div>
+        ) : documents.length === 0 ? (
+          <EmptyState
+            icon={FileText}
+            title={text.noDocumentsTitle}
+            description={text.noDocumentsDescription}
+            action={{
+              label: text.uploadDocuments,
+              onClick: () => navigate("/upload"),
+            }}
+          />
+        ) : (
+          <div className="list-stack" data-testid="recent-documents-list">
+            {documents.slice(0, 5).map((doc) => (
+              <button
+                className="list-item"
+                key={doc.id}
+                onClick={() => navigate(`/viewer/${doc.id}`)}
+                data-testid={`recent-document-item-${doc.id}`}
               >
-                {doc.indexed ? "Indicizzato" : "In attesa"}
-              </span>
-            </button>
-          ))}
-        </div>
+                <div>
+                  <p data-testid={`recent-document-name-${doc.id}`}>{doc.name}</p>
+                  <p className="card-muted" data-testid={`recent-document-meta-${doc.id}`}>
+                    {doc.file_type} • {doc.category}
+                  </p>
+                </div>
+                <span
+                  className={doc.indexed ? "tag-success" : "tag-warning"}
+                  data-testid={`recent-document-status-${doc.id}`}
+                >
+                  {doc.indexed ? "Indicizzato" : "In attesa"}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

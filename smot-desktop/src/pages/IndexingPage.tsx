@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { listen } from "@tauri-apps/api/event";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
 import {
@@ -31,6 +32,8 @@ export default function IndexingPage({ onStatusUpdate }: IndexingPageProps) {
 
   useEffect(() => {
     if (!jobId || jobId === "demo") return;
+    let unlisten: (() => void) | undefined;
+
     const poll = async () => {
       try {
         const response = await getIndexingStatus(jobId);
@@ -40,9 +43,22 @@ export default function IndexingPage({ onStatusUpdate }: IndexingPageProps) {
         setError("Job non trovato. Avvia un caricamento prima.");
       }
     };
+
+    const setupRealtime = async () => {
+      unlisten = await listen("indexing-progress", (event) => {
+        const payload = event.payload as IndexingStatus;
+        setStatus(payload);
+        onStatusUpdate(payload);
+      });
+    };
+
     void poll();
-    const timer = setInterval(() => void poll(), 1200);
-    return () => clearInterval(timer);
+    void setupRealtime();
+    const timer = setInterval(() => void poll(), 5000);
+    return () => {
+      clearInterval(timer);
+      if (unlisten) unlisten();
+    };
   }, [jobId, onStatusUpdate]);
 
   const actionPauseResume = async () => {
