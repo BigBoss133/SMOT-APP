@@ -67,22 +67,33 @@ sudo apt install -y \
 
 ## Build
 
+### 1. Clonare la repo (solo la prima volta)
 ```bash
-# 1. Clonare o passare al branch release
-cd ~/SMOT-APP
+git clone https://github.com/BigBoss133/SMOT-APP.git
+cd SMOT-APP
+```
+
+### 2. Passare al branch release
+```bash
 git checkout release/v0.1.0-beta
 git pull origin release/v0.1.0-beta
+```
 
-# 2. Installare dipendenze frontend
+### 3. Installare dipendenze frontend
+```bash
 cd smot-desktop
 npm install
+```
 
-# 3. Build backend Rust
+### 4. Build backend Rust
+```bash
 cd src-tauri
 cargo build
 cd ..
+```
 
-# 4. Build frontend + bundle
+### 5. Build frontend
+```bash
 npm run build
 ```
 
@@ -120,19 +131,29 @@ L'installer si trova in:
 
 ## Quick Start (Tutto in una riga)
 
+### Prima volta (clone)
+```bash
+git clone https://github.com/BigBoss133/SMOT-APP.git && cd SMOT-APP && git checkout release/v0.1.0-beta && cd smot-desktop && npm install && npm run tauri dev
+```
+
+### Dalla seconda volta in poi
+```bash
+cd ~/SMOT-APP && git checkout release/v0.1.0-beta && git pull && cd smot-desktop && npm run tauri dev
+```
+
 ### macOS
 ```bash
-git checkout release/v0.1.0-beta && cd smot-desktop && npm install && npm run tauri dev
+git clone https://github.com/BigBoss133/SMOT-APP.git && cd SMOT-APP && git checkout release/v0.1.0-beta && cd smot-desktop && npm install && npm run tauri dev
 ```
 
 ### Linux
 ```bash
-git checkout release/v0.1.0-beta && sudo apt install libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev && cd smot-desktop && npm install && npm run tauri dev
+git clone https://github.com/BigBoss133/SMOT-APP.git && cd SMOT-APP && git checkout release/v0.1.0-beta && sudo apt install libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev && cd smot-desktop && npm install && npm run tauri dev
 ```
 
 ### Windows (PowerShell)
 ```powershell
-git checkout release/v0.1.0-beta; cd smot-desktop; npm install; npm run tauri dev
+git clone https://github.com/BigBoss133/SMOT-APP.git; cd SMOT-APP; git checkout release/v0.1.0-beta; cd smot-desktop; npm install; npm run tauri dev
 ```
 
 ---
@@ -141,12 +162,13 @@ git checkout release/v0.1.0-beta; cd smot-desktop; npm install; npm run tauri de
 
 | Errore | Soluzione |
 |--------|-----------|
+| `fatal: not a git repository` | Sei fuori dalla repo. Primo: `git clone https://github.com/BigBoss133/SMOT-APP.git && cd SMOT-APP` |
 | `cargo build` fallisce con `pkg-config` su Linux | `sudo apt install libgtk-3-dev libwebkit2gtk-4.1-dev` |
 | `npm run build` fallisce con `CustomEvent is not defined` | Node.js troppo vecchio. Aggiornare con `n 20` |
-| `cargo build` fallisce con `unknown field X` | Tauri config non aggiornato. Assicurarsi di essere su `release/v0.1.0-beta` |
-| `tauri dev` non apre finestra | Verificare che Xcode (`xcode-select --install`) sia installato su macOS |
-| `Permission denied` su Linux | Aggiungere `--width 1600 --height 960` o eseguire senza restrizioni Wayland |
-| App si apre ma schermata bianca | La build frontend non e' stata completata. Rilanciare `npm install && npm run tauri dev` |
+| `cargo build` fallisce con `unknown field X` | Tauri config non aggiornato. Sei su `release/v0.1.0-beta`? |
+| `tauri dev` non apre finestra | Verificare Xcode (`xcode-select --install`) su macOS |
+| `Permission denied` su Linux | Eseguire senza restrizioni Wayland |
+| App si apre ma schermata bianca | Rilanciare `npm install && npm run tauri dev` |
 
 ---
 
@@ -154,7 +176,7 @@ git checkout release/v0.1.0-beta; cd smot-desktop; npm install; npm run tauri de
 
 - **macOS**: La prima volta che apri la .app, clicca **destro -> Apri** (non doppio click).
   Poi il sistema chiede conferma una tantum.
-- **Windows**: Windows SmartScreen potrebbe mostrare un avviso. Clicca "Ulteriori informazioni" -> "Esegui comunque".
+- **Windows**: SmartScreen potrebbe mostrare un avviso. Clicca "Ulteriori informazioni" -> "Esegui comunque".
 - **Linux**: Potrebbe servire `--no-sandbox` se eseguito come root (non raccomandato).
 - **Ollama**: Opzionale. Se non installato, la chat funziona in modalita' solo-ricerca.
 - **Code signing**: Non attivo per la beta. L'app funziona ma mostra "Sviluppatore non verificato".
