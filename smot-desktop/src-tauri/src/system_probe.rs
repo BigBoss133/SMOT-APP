@@ -5,9 +5,11 @@ use sysinfo::{Disks, System};
 pub struct SystemProfile {
     pub cpu_cores: usize,
     pub ram_total_gb: f32,
+    pub ram_available_gb: f32,
     pub gpu_name: Option<String>,
     pub gpu_vram_gb: Option<f32>,
     pub gpu_cuda: bool,
+    pub is_unified_memory: bool,
     pub disk_free_gb: f32,
     pub os_name: String,
 }
@@ -18,6 +20,7 @@ pub fn probe_system() -> SystemProfile {
 
     let cpu_cores = num_cpus::get();
     let ram_total_gb = sys.total_memory() as f32 / (1024.0 * 1024.0 * 1024.0);
+    let ram_available_gb = sys.available_memory() as f32 / (1024.0 * 1024.0 * 1024.0);
 
     let os_name = format!(
         "{} {}",
@@ -31,20 +34,22 @@ pub fn probe_system() -> SystemProfile {
         .map(|d| d.available_space() as f32 / (1024.0 * 1024.0 * 1024.0))
         .sum::<f32>();
 
-    let (gpu_name, gpu_vram_gb, gpu_cuda) = detect_gpu();
+    let (gpu_name, gpu_vram_gb, gpu_cuda, is_unified_memory) = detect_gpu(ram_total_gb);
 
     SystemProfile {
         cpu_cores,
         ram_total_gb,
+        ram_available_gb,
         gpu_name,
         gpu_vram_gb,
         gpu_cuda,
+        is_unified_memory,
         disk_free_gb,
         os_name,
     }
 }
 
-fn detect_gpu() -> (Option<String>, Option<f32>, bool) {
+fn detect_gpu(total_ram_gb: f32) -> (Option<String>, Option<f32>, bool, bool) {
     #[cfg(target_os = "linux")]
     {
         if let Ok(output) = std::process::Command::new("lspci")
@@ -57,11 +62,11 @@ fn detect_gpu() -> (Option<String>, Option<f32>, bool) {
                     let gpu_name = line.split(": ").last().unwrap_or("Unknown GPU").to_string();
                     let cuda = gpu_name.to_lowercase().contains("nvidia");
                     let vram = if cuda { detect_nvidia_vram() } else { None };
-                    return (Some(gpu_name), vram, cuda);
+                    return (Some(gpu_name), vram, cuda, false);
                 }
             }
         }
-        (None, None, false)
+        (None, None, false, false)
     }
 
     #[cfg(target_os = "windows")]
@@ -79,11 +84,11 @@ fn detect_gpu() -> (Option<String>, Option<f32>, bool) {
                     let vram = parts.last()
                         .and_then(|s| s.parse::<f32>().ok())
                         .map(|b| b / (1024.0 * 1024.0 * 1024.0));
-                    return (Some(name), vram, cuda);
+                    return (Some(name), vram, cuda, false);
                 }
             }
         }
-        (None, None, false)
+        (None, None, false, false)
     }
 
     #[cfg(target_os = "macos")]
@@ -93,11 +98,14 @@ fn detect_gpu() -> (Option<String>, Option<f32>, bool) {
             .output()
         {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            let mut gpu_name = None;
-            let mut vram = None;
+            let mut gpu_name: Option<String> = None;
+            let mut vram: Option<f32> = None;
+            let mut is_apple_silicon = false;
             for line in stdout.lines() {
                 if line.contains("Chipset Model:") || line.contains("Chip Model:") {
-                    gpu_name = Some(line.split(": ").last().unwrap_or("Unknown").to_string());
+                    let name = line.split(": ").last().unwrap_or("Unknown").to_string();
+                    is_apple_silicon = name.contains("Apple");
+                    gpu_name = Some(name);
                 }
                 if line.contains("VRAM") {
                     if let Some(vram_str) = line.split(": ").last() {
@@ -109,14 +117,18 @@ fn detect_gpu() -> (Option<String>, Option<f32>, bool) {
                     }
                 }
             }
-            return (gpu_name, vram, false);
+            // Apple Silicon: memoria unificata, VRAM stimata come 50% della RAM totale
+            if is_apple_silicon && vram.is_none() {
+                vram = Some(total_ram_gb * 0.5);
+            }
+            return (gpu_name, vram, false, is_apple_silicon);
         }
-        (None, None, false)
+        (None, None, false, false)
     }
 
     #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
     {
-        (None, None, false)
+        (None, None, false, false)
     }
 }
 
