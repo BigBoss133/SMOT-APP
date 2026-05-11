@@ -2,124 +2,89 @@
 
 > Archivio documentale intelligente 100% offline con IA locale opzionale
 
-## 🎯 Cos'è SMOT
+---
 
-SMOT è un'applicazione **desktop nativa** per l'archiviazione e la consultazione intelligente di documenti. Funziona completamente offline sul tuo computer, senza cloud, senza telemetria.
+## Team
 
-- 📄 **Carica documenti** — PDF, DOCX, TXT, XLSX
-- 🔍 **Ricerca full-text** — FTS5 immediata
-- 💬 **Chat RAG** — Ollama + ricerca contestuale
-- 🧠 **IA Locale** — Opzionale, privata, sul tuo PC
-- 🕸️ **Graph View** — Connessioni tra documenti
-- 🌐 **Bilingue** — Italiano / English
-- 💻 **Cross-Platform** — Windows, macOS, Linux
-- 🔒 **100% Offline** — Zero telemetria
+| Sviluppatore | Ruolo | Completato |
+|---|---|---|
+| **Michele** (BigBoss133) | Backend Rust + Release | ✅ 15/15 |
+| **Salvatore** (salvograsso10) | Frontend React + UI/UX | ✅ 10/10 |
+| **Tommaso** | Database + Sicurezza + CI | ✅ 9/9 |
+
+> Tutti i task completati — 34/34. Pronti per la beta.
 
 ---
 
-## 👥 Team
+## Stato Attuale
 
-| Sviluppatore | GitHub | Ruolo | Completato |
-|---|---|---|---|
-| **Michele** | BigBoss133 | Backend Rust + Release | ✅ Tutti i task |
-| **Salvatore** | salvograsso10 | Frontend React + UI/UX | ✅ Componenti, ⏳ Fix wizard |
-| **Tommaso** | — | Database + Sicurezza | ✅ Tutti i task |
+```
+Michele    ████████████████ 100% ✅  Backend Rust (10 comandi + indexing + onboarding)
+Salvatore  ████████████████ 100% ✅  Frontend React (7 componenti + 3 fix wizard)
+Tommaso    ████████████████ 100% ✅  DB refactoring + Security + CI fix + dead code
+```
 
-> Tutti usiamo **OpenCode** con Sisyphus.
+### Michele (Backend)
+- 10 comandi Tauri stub → reali (sysinfo, SQLite, Ollama RAG, FTS5)
+- Indexing pipeline (chunking → embedding → FTS5)
+- Setup onboarding + Apple Silicon detection
+- Branch release/v0.1.0-beta con chiave updater
+- FIX installer: config check, complete_onboarding, unified memory, ram_available
 
----
+### Salvatore (Frontend)
+- ErrorBoundary, Skeleton, EmptyState, ConfirmDialog, Toast
+- Real-time indexing progress listener
+- FIX-4: App.tsx wizard full-screen
+- FIX-5: OnboardingPage complete_onboarding call
+- FIX-6: SystemDiscoveryStep unified memory display
 
-## 🌿 Branch Attivi
-
-| Branch | Stato |
-|---|---|
-| `main` | 🟢 Sviluppo attivo |
-| `release/v0.1.0-beta` | 🟢 Release beta |
-| `docs/install-guides` | 🟢 Guide installazione per OS |
-| `backup/pre-cleanup` | 📌 Tag di backup (11 Maggio) |
-
----
-
-## 📊 Stato Attuale
-
-### ✅ Michele — Backend Rust (COMPLETATO)
-
-| Task | Stato | Commit |
-|------|:-----:|--------|
-| Cleanup file obsoleti | ✅ | `80a60cf` |
-| REPO-ANALYSIS.md aggiornato | ✅ | `f6b3400` |
-| `get_system_status` con sysinfo + SQLite | ✅ | `36dbba9` |
-| `get_documents` da DB reale | ✅ | `2c669c8` |
-| `upload_documents` file copy + insert | ✅ | `e3505e4` |
-| `start_indexing` pipeline (indexing.rs) | ✅ | `80cf0f4` |
-| `get_indexing_status` controller state | ✅ | `80cf0f4` |
-| `chat_query` FTS5 + Ollama RAG | ✅ | `0848d5b` |
-| `get_viewer_page` reader + parsers | ✅ | `b8ae765` |
-| Indexing controls (pause/resume/background) | ✅ | `80cf0f4` |
-| Branch release + chiave updater | ✅ | `878b401` |
-| Fix onboarding setup.rs | ✅ | `83d5ea3` |
-| Fix Apple Silicon detection | ✅ | `83d5ea3` |
-
-### ✅ Salvatore — Frontend React
-
-| Task | Stato |
-|------|:-----:|
-| C2: Eliminati backend/frontend/test_reports | ✅ |
-| F1: ErrorBoundary in App.tsx | ✅ |
-| F2: Loading skeletons (Dashboard, Chat, Viewer) | ✅ |
-| F3: Empty states | ✅ |
-| F4: ConfirmDialog (azioni distruttive) | ✅ |
-| F5: Toast notifications | ✅ |
-| F6: Real-time indexing progress listener | ✅ |
-| **FIX-4**: Wizard full-screen (nascondere sidebar) | ⏳ |
-| **FIX-5**: OnboardingPage chiama complete_onboarding | ⏳ |
-| **FIX-6**: SystemDiscoveryStep Apple Silicon | ⏳ |
-
-### ✅ Tommaso — Database + Sicurezza
-
-| Task | Stato | Note |
-|------|:-----:|------|
-| C3: Archiviare piani obsoleti | ✅ | Piani in archive/, `.gitignore` fixato |
-| D1: `insert_document()` in db.rs | ✅ | Estratto da `upload_documents` |
-| D2: `get_all_documents()` in db.rs | ✅ | Estratto da `get_documents` |
-| D3: `update_indexing_status()` in db.rs | ✅ | Estratto da `indexing.rs` |
-| D4: `search_fts5()` in db.rs | ✅ | Estratto da `chat_query` |
-| S1: Input validation comandi Tauri | ✅ | Query max 1000, UUID, no `../`, model regex |
-| S2: Rate limiting Ollama | ✅ | Max 5 req/sec, mutex-based |
-| S3: Sanitizzazione filename upload | ✅ | Chars pericolosi, max 255, nomi riservati |
-| S4: Pulizia dati sensibili config | ✅ | 0 secrets, CSP ok, `.gitignore` completo |
+### Tommaso (DB + Security)
+- C3: Archiviare piani obsoleti
+- D1-D4: Estrarre funzioni DB in db.rs (refactoring)
+- S1: Input validation comandi Tauri
+- S2: Rate limiting Ollama (5 req/sec)
+- S3: Sanitizzazione filename upload
+- S4: Pulizia dati sensibili config
+- Dead code: JobInput, IndexingFileStatus removed
+- CI fix: update trigger branches
 
 ---
 
-## 🚀 Piani di Lavoro (OpenCode Ready)
+## Build
 
-| Piano | Per | File | Task |
-|---|---|---|---|
-| **Team Plan** | Tutti | `smot-team-plan.md` | 28 totali |
-| **Michele** | Backend | `smot-michele-backend.md` | ✅ 13/13 ⭐ COMPLETATO |
-| **Salvatore** | Frontend | `smot-salvatore-frontend.md` | ✅ 7/7 + ⏳ 3/3 |
-| **Tommaso** | DB & Sicurezza | `smot-tommaso-db-security.md` | ✅ 9/9 ⭐ COMPLETATO |
-| **Installer Fix** | Tutti | `smot-installer-fix.md` | 3/8 |
-| **Release Beta** | Team | `smot-release-beta.md` | 5/12 |
-
-> Tutti i piani sono in `.sisyphus/plans/` — esegui con `/start-work <nome-piano>`
+| Layer | Comando | Risultato |
+|-------|---------|-----------|
+| Rust | cargo build | ✅ 0 errori |
+| TypeScript | npx tsc --noEmit | ✅ 0 errori |
+| Frontend | npm run build | ✅ 321 KB |
 
 ---
 
-## 🏗️ Stack
+## Piani di Lavoro
 
-| Layer | Tecnologia |
-|---|---|
-| Desktop | Tauri v2 |
-| Frontend | React 19 + TypeScript + Vite |
-| Backend | Rust + sysinfo + rusqlite |
-| DB | SQLite + FTS5 |
-| IA | Ollama (opzionale) |
-| CI/CD | GitHub Actions |
+Tutti in `.sisyphus/plans/`:
+- smot-team-plan.md — Piano master (34/34 completati)
+- smot-michele-backend.md — Michele (15/15)
+- smot-salvatore-frontend.md — Salvatore (10/10)
+- smot-tommaso-db-security.md — Tommaso (9/9)
+- smot-installer-fix.md — Fix (8/8)
+- smot-release-beta.md — Release (5/12)
+
+---
+
+## Prossimo Passo: Beta Release
+
+```bash
+cd ~/SMOT-APP
+git checkout release/v0.1.0-beta
+git pull
+cd smot-desktop
+npm run tauri build
+# .dmg in src-tauri/target/release/bundle/dmg/
+```
 
 ---
 
 **Repo:** https://github.com/BigBoss133/SMOT-APP
-**Piani:** `.sisyphus/plans/`
-**Audit:** `AUDIT-REPORT.md`
-**Guide OS:** `INSTALL.md` (branch `docs/install-guides`)
+**Guide OS:** INSTALL.md (branch docs/install-guides)
+**Audit:** AUDIT-REPORT.md
