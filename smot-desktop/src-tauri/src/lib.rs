@@ -217,7 +217,7 @@ fn update_mode(mode: String, state: tauri::State<AppState>) -> ModeData {
 fn get_documents(state: tauri::State<AppState>) -> Result<Vec<ViewerDocument>, String> {
   let db = state.db.lock().map_err(|e| e.to_string())?;
   let mut stmt = db
-    .prepare("SELECT id, filename, file_type, size_bytes, uploaded_at, indexed FROM documents ORDER BY uploaded_at DESC")
+    .prepare("SELECT id, name, file_type, size_bytes, created_at, indexed FROM documents ORDER BY created_at DESC")
     .map_err(|e| e.to_string())?;
 
   let docs = stmt
@@ -246,17 +246,62 @@ fn get_documents(state: tauri::State<AppState>) -> Result<Vec<ViewerDocument>, S
 }
 
 #[tauri::command]
-fn upload_documents(payload: UploadDocumentInput) -> UploadResponse {
-  let uploaded_documents = payload
-    .files
-    .iter()
-    .enumerate()
-    .map(|(index, name)| UploadedDocument {
-      id: format!("{}-{}", payload.category.to_lowercase(), index + 1),
-      name: name.clone(),
-    })
-    .collect();
-  UploadResponse { uploaded_documents }
+fn upload_documents(
+  app_handle: tauri::AppHandle,
+  state: tauri::State<AppState>,
+  payload: UploadDocumentInput,
+) -> Result<UploadResponse, String> {
+  use std::fs;
+  use std::path::PathBuf;
+
+  let app_data_dir = app_handle.path().app_data_dir().map_err(|e| e.to_string())?;
+  let docs_dir = app_data_dir.join("documents");
+  fs::create_dir_all(&docs_dir).map_err(|e| format!("Cannot create documents dir: {}", e))?;
+
+  let db = state.db.lock().map_err(|e| e.to_string())?;
+  let mut uploaded = Vec::new();
+
+  for file_path_str in &payload.files {
+    let src = PathBuf::from(file_path_str);
+    if !src.exists() {
+      return Err(format!("File not found: {}", file_path_str));
+    }
+
+    let ext = src
+      .extension()
+      .and_then(|e| e.to_str())
+      .unwrap_or("bin")
+      .to_lowercase();
+
+    let file_name = src
+      .file_name()
+      .and_then(|n| n.to_str())
+      .unwrap_or("unknown")
+      .to_string();
+
+    let file_size = src.metadata().map(|m| m.len() as i64).unwrap_or(0);
+    let uuid = uuid::Uuid::new_v4().to_string();
+    let dest_file_name = format!("{}.{}", uuid, ext);
+    let dest_path = docs_dir.join(&dest_file_name);
+
+    fs::copy(&src, &dest_path).map_err(|e| format!("Cannot copy file: {}", e))?;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let relative_path = format!("documents/{}", dest_file_name);
+    db.execute(
+      "INSERT INTO documents (id, name, path, category, file_type, size_bytes, indexed, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, ?7)",
+      rusqlite::params![uuid, file_name, relative_path, payload.category, ext.to_uppercase(), file_size, now],
+    ).map_err(|e| format!("DB insert error: {}", e))?;
+
+    uploaded.push(UploadedDocument {
+      id: uuid,
+      name: file_name,
+    });
+  }
+
+  Ok(UploadResponse {
+    uploaded_documents: uploaded,
+  })
 }
 
 #[tauri::command]
