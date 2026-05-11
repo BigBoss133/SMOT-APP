@@ -7,14 +7,17 @@ import { LicenseStep } from "../components/onboarding/LicenseStep";
 import { ModelDownloadStep } from "../components/onboarding/ModelDownloadStep";
 import { FirstDocumentStep } from "../components/onboarding/FirstDocumentStep";
 import { CompletionStep } from "../components/onboarding/CompletionStep";
+import { invoke } from "@tauri-apps/api/core";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
 
 interface SystemProfile {
   cpu_cores: number;
   ram_total_gb: number;
+  ram_available_gb: number;
   gpu_name: string | null;
   gpu_vram_gb: number | null;
+  is_unified_memory: boolean;
   os_name: string;
 }
 
@@ -64,7 +67,8 @@ export default function OnboardingPage() {
     setFirstDoc(file);
   }, []);
 
-  const handleFinish = useCallback(() => {
+  const handleFinish = useCallback(async () => {
+    await invoke("complete_onboarding");
     navigate("/");
   }, [navigate]);
 

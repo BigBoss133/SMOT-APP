@@ -4,8 +4,10 @@ import { Cpu, HardDrive, Monitor, Sparkles } from "lucide-react";
 interface SystemProfile {
   cpu_cores: number;
   ram_total_gb: number;
+  ram_available_gb: number;
   gpu_name: string | null;
   gpu_vram_gb: number | null;
+  is_unified_memory: boolean;
   os_name: string;
 }
 

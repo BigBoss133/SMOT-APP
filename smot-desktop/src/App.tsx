@@ -1,6 +1,6 @@
 import { Languages, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Route, Routes, useNavigate } from "react-router-dom";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { listen } from "@tauri-apps/api/event";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { RightSystemPanel } from "./components/RightSystemPanel";
@@ -37,6 +37,8 @@ export default function App() {
   const [documents, setDocuments] = useState<ViewerDocument[]>([]);
   const [modeData, setModeData] = useState<ModeData>(fallbackModes);
   const [searchValue, setSearchValue] = useState("");
+  const location = useLocation();
+  const isOnboarding = location.pathname === "/onboarding";
 
   const refreshDocuments = useCallback(async () => {
     try {
@@ -110,10 +112,10 @@ export default function App() {
 
   return (
     <div className="app-shell" data-testid="smot-app-shell">
-      <SidebarNav />
+      {!isOnboarding && <SidebarNav />}
 
       <main className="main-content" data-testid="main-content-area">
-        <header className="topbar" data-testid="main-topbar">
+        {!isOnboarding && <header className="topbar" data-testid="main-topbar">}
           <h1 data-testid="app-main-title">{text.appName}</h1>
           <div className="topbar-actions" data-testid="topbar-actions">
             <label className="search-box" data-testid="topbar-search-box">
@@ -136,7 +138,7 @@ export default function App() {
               </span>
             </button>
           </div>
-        </header>
+        </header>}
 
         <ErrorBoundary>
           <Routes>
@@ -171,12 +173,12 @@ export default function App() {
         </ErrorBoundary>
       </main>
 
-      <RightSystemPanel status={systemStatus} />
-      <StatusBar
+      {!isOnboarding && <RightSystemPanel status={systemStatus} />}
+      {!isOnboarding && <StatusBar
         mode={modeData.active_mode}
         indexedCount={documents.filter((doc) => doc.indexed).length}
         totalCount={documents.length}
-      />
+      />}
     </div>
   );
 }
