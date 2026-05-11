@@ -12,36 +12,45 @@
 
 | Branch | Ruolo | Commit | Stato |
 |--------|-------|--------|:-----:|
-| `main` | Backend + logica core | `8abe0c5` | 🟡 Scaffold pronto, logica da implementare |
-| `Animations-and-design` | UI/UX, Graph View, animazioni | `129f429` | 🟢 Design pronto, già mergiato in main |
-| `installer` | Installer + wizard onboarding | `6a73f70` | 🟢 Piano completato, 5 fix necessari |
+| `main` | Backend + logica core | `5380fbf` | 🟢 10 comandi reali + Frontend polish completati |
+| `Animations-and-design` | UI/UX, Graph View, animazioni | (merged) | 🟢 Design completato — mergiato ✅ |
+| `installer` | Installer + wizard onboarding | (merged) | 🟢 Installer completato — mergiato ✅ |
 
 ---
 
 ## 📦 BRANCH: `main` (vedi anche: [Piano Team](.sisyphus/plans/smot-team-plan.md))
 
 ### Stato Attuale
-Scaffold Tauri v2 + React 19 funzionante. **Tutti i comandi backend restituiscono dati mock/finti.**
+App completa lato backend e frontend. **Tutti i 10 comandi Tauri sono implementazioni reali.**
+
+✅ **Michele:** 10 comandi stub → reali (sysinfo, SQLite, Ollama RAG, indexing pipeline, FTS5)
+✅ **Salvatore:** 7 task frontend polish (ErrorBoundary, Skeleton, Toast, ConfirmDialog, EmptyState, indexing events)
 
 ### File Chiave
 | File | Contenuto | Problema |
 |------|-----------|----------|
-| `src-tauri/src/lib.rs` | 13 comandi Tauri | ⚠️ Tutti mock — `get_system_status` hardcoded, `chat_query` risposta finta, `get_documents` ritorna 3 doc finti |
+| `src-tauri/src/lib.rs` | 13 comandi Tauri + `indexing.rs` | ✅ Tutti reali (sysinfo, SQLite, Ollama RAG, FTS5, file upload) |
 | `src-tauri/src/db.rs` | SQLite init + FTS5 | ✅ Funzionante |
 | `src-tauri/src/parsers.rs` | PDF/DOCX extraction | ✅ Funzionante |
 | `src/components/GraphView/` | 8 componenti Graph View | ✅ Completati |
 | `src/hooks/` | useForceGraph, useAnimation, etc. | ✅ Completati |
 | `src/services/api.ts` | Frontend API wrapper | ✅ Funzionante |
+| `src/components/ErrorBoundary.tsx` | ErrorBoundary | ✅ Completato (Salvatore) |
+| `src/components/Skeleton.tsx` | Loading skeleton | ✅ Completato (Salvatore) |
+| `src/components/EmptyState.tsx` | Empty state | ✅ Completato (Salvatore) |
+| `src/components/ConfirmDialog.tsx` | Confirm dialog | ✅ Completato (Salvatore) |
+| `src/components/Toast.tsx` | Toast notification | ✅ Completato (Salvatore) |
+| `src/context/ToastContext.tsx` | Toast context + hook | ✅ Completato (Salvatore) |
 | `src/i18n/translations.ts` | IT/EN | ✅ 34 chiavi |
 
 ### Problemi Critici
 | # | Problema | Severità |
 |---|---------|----------|
-| M1 | `get_system_status| 🔴 Da implementare (vedi team plan)` restituisce dati hardcoded (ram_used: 6.4, cpu: 21%) | 🔴 |
-| M2 | `chat_query| 🔴 Da implementare (vedi team plan)` non usa Ollama — risposta finta hardcoded | 🔴 |
-| M3 | `get_documents| 🔴 Da implementare (vedi team plan)` restituisce 3 documenti fake, non legge da SQLite | 🔴 |
-| M4 | `get_indexing_status| 🔴 Da implementare (vedi team plan)` è completamente simulato | 🔴 |
-| M5 | `upload_documents| 🔴 Da implementare (vedi team plan)` non salva realmente i file | 🔴 |
+| M1 | `get_system_status` — ora reale (sysinfo + SQLite + Ollama check) | ✅ Completato (Michele) |
+| M2 | `chat_query` — ora RAG reale (FTS5 + Ollama `/api/generate` + fallback graceful) | ✅ Completato (Michele) |
+| M3 | `get_documents` — ora query SQLite reale (SELECT da tabella documents) | ✅ Completato (Michele) |
+| M4 | `get_indexing_status` — ora legge da IndexingController (condiviso) | ✅ Completato (Michele) |
+| M5 | `upload_documents` — ora copia file reali + UUID + insert DB | ✅ Completato (Michele) |
 | M6 | Nessun auto-update configurato | 🟡 |
 | M7 | Nessuna firma codice | 🟡 |
 | M8 | GPU detection assente in `system_probe.rs` (NON presente su main) | N/A* |
@@ -162,17 +171,16 @@ F1 → F2 → F4 → F5 → F3
 ```
 Obiettivo: Installer pronto per test reale. ✅ Tutti i 5 fix implementati.
 
-### Fase 2 — Backend Reale (3-5 giorni)
-```
-M1 → M3 → M5 → M2 → M4
-```
-Obiettivo: Sostituire tutti i mock con implementazioni reali (SQLite + Ollama).
+### Fase 2 — Backend Reale ✅ COMPLETATA (Michele)
+Tutti i 10 stub sostituiti con implementazioni reali:
+- sysinfo per CPU/RAM/disco
+- SQLite per documenti
+- Ollama RAG per chat
+- FTS5 per ricerca
+- Indexing pipeline con chunking/embedding
 
-### Fase 3 — Polish & Rilascio (2-3 giorni)
-```
-I1 → I2 → I3 → F3 → Rilascio v0.1.0
-```
-Obiettivo: Primo installer funzionante scaricabile da GitHub Releases.
+### Fase 3 — Frontend Polish ✅ COMPLETATA (Salvatore)
+- ErrorBoundary, Skeleton, EmptyState, ConfirmDialog, Toast system, indexing events
 
 ---
 
@@ -186,6 +194,20 @@ Obiettivo: Primo installer funzionante scaricabile da GitHub Releases.
 | `test_result.md` | Vecchi test superati |
 
 ---
+## ⏳ Prossimi Task (Tommaso)
+
+### Database Functions (D1-D4)
+- ⚠️ Già implementati inline nei comandi Tauri da Michele
+- Da fare: estrarre in funzioni `db.rs` dedicate (refactoring)
+
+### Security (S1-S4)
+- 🔴 **S1**: Input validation comandi Tauri
+- 🔴 **S2**: Rate limiting chiamate Ollama
+- 🔴 **S3**: Sanitizzazione filename upload
+- 🔴 **S4**: Pulizia dati sensibili config
+
+---
+
 ## 📋 Riepilogo Fix per Piano
 
 | ID | Task | Branch | File |
