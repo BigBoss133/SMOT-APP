@@ -152,7 +152,7 @@ pub async fn start_indexing(
                 return;
             }
         };
-        let mut stmt = conn.prepare(
+        let stmt = conn.prepare(
             "SELECT id, name, path FROM documents WHERE indexed = 0"
         );
         let mut stmt = match stmt {

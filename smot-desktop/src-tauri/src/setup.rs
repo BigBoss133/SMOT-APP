@@ -16,6 +16,7 @@ pub struct Config {
     pub ai_enabled: bool,
 }
 
+#[allow(dead_code)]
 pub fn config_path(app: &tauri::App) -> Result<PathBuf, String> {
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     Ok(app_data_dir.join("config.json"))
