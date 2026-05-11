@@ -3,9 +3,12 @@ import {
   type ChangeEvent, type DragEvent,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 import { translations } from "../i18n/translations";
 import { uploadDocuments, startIndexing } from "../services/api";
 import { useLanguage } from "../context/LanguageContext";
+import { useToast } from "../hooks/useToast";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 interface UploadPageProps {
   onRefreshDocuments: () => Promise<void>;
@@ -15,10 +18,12 @@ export default function UploadPage({ onRefreshDocuments }: UploadPageProps) {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const text = translations[language];
+  const toast = useToast();
   const [localFiles, setLocalFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
+  const [fileToRemove, setFileToRemove] = useState<string | null>(null);
 
   const fileNames = useMemo(() => localFiles.map((file) => file.name), [localFiles]);
 
@@ -43,9 +48,11 @@ export default function UploadPage({ onRefreshDocuments }: UploadPageProps) {
       const ids = uploadResult.uploaded_documents.map((doc) => doc.id);
       const indexingResult = await startIndexing(ids);
       await onRefreshDocuments();
+      toast.success(text.uploadSuccess);
       navigate(`/indexing/${indexingResult.job_id}`);
     } catch {
       setError("Errore durante upload o indicizzazione.");
+      toast.error(text.uploadError);
     } finally {
       setIsUploading(false);
     }
@@ -83,9 +90,28 @@ export default function UploadPage({ onRefreshDocuments }: UploadPageProps) {
         <div className="list-stack" data-testid="upload-selected-files-list">
           {fileNames.length ? (
             fileNames.map((name) => (
-              <p className="list-item static file-item" key={name} data-testid={`upload-selected-file-${name}`}>
-                {name}
-              </p>
+              <div
+                className="list-item static file-item"
+                key={name}
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                data-testid={`upload-selected-file-${name}`}
+              >
+                <span>{name}</span>
+                <button
+                  className="icon-button"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#ef4444",
+                    padding: "4px",
+                  }}
+                  onClick={() => setFileToRemove(name)}
+                  data-testid={`upload-remove-file-${name}`}
+                >
+                  <X size={16} />
+                </button>
+              </div>
             ))
           ) : (
             <p className="card-muted" data-testid="upload-selected-files-empty">
@@ -99,6 +125,20 @@ export default function UploadPage({ onRefreshDocuments }: UploadPageProps) {
           </div>
         )}
         {error ? <p className="error-text" data-testid="upload-error-message">{error}</p> : null}
+        <ConfirmDialog
+          open={!!fileToRemove}
+          title="Rimuovi file"
+          message={`Sei sicuro di voler rimuovere "${fileToRemove}" dalla lista?`}
+          confirmLabel="Rimuovi"
+          confirmVariant="danger"
+          onConfirm={() => {
+            if (fileToRemove) {
+              setLocalFiles((prev) => prev.filter((f) => f.name !== fileToRemove));
+              setFileToRemove(null);
+            }
+          }}
+          onCancel={() => setFileToRemove(null)}
+        />
         <div className="action-row" data-testid="upload-action-row">
           <button className="action-button secondary" onClick={() => navigate("/")} data-testid="upload-cancel-button">
             {text.cancel}
