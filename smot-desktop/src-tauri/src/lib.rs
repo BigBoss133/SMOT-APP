@@ -9,6 +9,7 @@ use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use sysinfo::{Disks, System};
+use tauri::Manager;
 
 struct AppState {
   active_mode: Mutex<String>,
@@ -338,19 +339,76 @@ fn chat_query(payload: ChatQueryInput) -> ChatResponse {
 }
 
 #[tauri::command]
-fn get_viewer_page(payload: ViewerPageInput) -> ViewerPageData {
-  ViewerPageData {
-    document_id: payload.document_id,
-    document_name: "Contratto_Fornitura_2026.pdf".to_string(),
-    page: payload.page,
-    total_pages: 8,
-    highlights: vec![
-      "SMOT".to_string(),
-      "indicizzazione".to_string(),
-      "Ollama".to_string(),
-    ],
-    text: "SMOT mantiene i dati in locale e lavora offline. L'indicizzazione prepara chunk e metadati per ricerca rapida. Il supporto Ollama viene verificato all'avvio con fallback sicuro.".to_string(),
+fn get_viewer_page(
+  app_handle: tauri::AppHandle,
+  state: tauri::State<'_, AppState>,
+  payload: ViewerPageInput,
+) -> Result<ViewerPageData, String> {
+  // Look up document in DB for name and path
+  let (doc_name, doc_path_str) = {
+    let db = state.db.lock().map_err(|e| format!("DB lock error: {}", e))?;
+    let mut stmt = db
+      .prepare("SELECT name, path FROM documents WHERE id = ?1")
+      .map_err(|e| format!("DB query error: {}", e))?;
+    stmt.query_row(rusqlite::params![&payload.document_id], |row| {
+      Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+    })
+    .map_err(|e| format!("Document not found in DB: {}", e))?
+  };
+
+  // Resolve file path (try absolute first, then relative to app_data_dir)
+  let doc_path = std::path::PathBuf::from(&doc_path_str);
+  let resolved_path = if doc_path.is_absolute() && doc_path.exists() {
+    doc_path
+  } else {
+    let app_data_dir = app_handle
+      .path()
+      .app_data_dir()
+      .map_err(|e| format!("Cannot get app data dir: {}", e))?;
+    let relative_path = app_data_dir.join(&doc_path_str);
+    if relative_path.exists() {
+      relative_path
+    } else {
+      app_data_dir.join("documents").join(&doc_path_str)
+    }
+  };
+
+  if !resolved_path.exists() {
+    return Err(format!("Document file not found: {}", doc_path_str));
   }
+
+  // Extract text using the parsers module
+  let doc_text = parsers::extract_document_text(resolved_path)
+    .map_err(|e| format!("Failed to extract text: {}", e))?;
+
+  // Split text into "pages" (approximate for non-PDF; PDFs use actual page count)
+  let lines: Vec<&str> = doc_text.text.lines().collect();
+  let lines_per_page = 50;
+  let total_pages = if let Some(pc) = doc_text.page_count {
+    pc as u16
+  } else {
+    ((lines.len() + lines_per_page - 1) / lines_per_page).max(1) as u16
+  };
+
+  // payload.page is 1-indexed from the frontend
+  let requested_page = payload.page.max(1);
+  let page_index = (requested_page - 1).min(total_pages.saturating_sub(1)) as usize;
+  let start_line = page_index * lines_per_page;
+  let end_line = (start_line + lines_per_page).min(lines.len());
+  let page_text = if start_line < lines.len() {
+    lines[start_line..end_line].join("\n")
+  } else {
+    String::new()
+  };
+
+  Ok(ViewerPageData {
+    document_id: payload.document_id,
+    document_name: doc_name,
+    page: (page_index + 1) as u16,
+    total_pages,
+    highlights: vec![],
+    text: page_text,
+  })
 }
 
 #[tauri::command]
