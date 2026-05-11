@@ -19,13 +19,25 @@ SMOT è un'applicazione **desktop nativa** per l'archiviazione e la consultazion
 
 ---
 
+## 👥 Team
+
+| Sviluppatore | Ruolo | Area |
+|---|---|---|
+| **Michele** (BigBoss133) | Backend Rust + Infrastruttura | 10 comandi Tauri, CI/CD, Installer |
+| **Salvatore** (salvograsso10) | Frontend React + UI/UX | Animazioni, Graph View, Componenti |
+| **Tommaso** | Backend + Database + Sicurezza | Funzioni SQLite, Security hardening |
+
+> 🔧 Tutti usiamo **OpenCode** con Sisyphus per l'esecuzione automatica dei task.
+
+---
+
 ## 🌿 Branch Structure
 
-| Branch | Ruolo | Chi Lavora |
-|--------|-------|------------|
-| `main` | Sviluppo backend + logica | Socio sviluppatore |
-| `Animations-and-design` | UI/UX, animazioni, Graph View | TU (designer) |
-| `installer` | Installer Windows/macOS/Linux + wizard | Sviluppatore principale |
+| Branch | Stato |
+|---|---|
+| `main` | 🟢 Sviluppo attivo — tutti i branch mergiati qui |
+| `Animations-and-design` | ✅ Mergiato in main |
+| `installer` | ✅ Mergiato in main |
 
 ---
 
@@ -34,57 +46,57 @@ SMOT è un'applicazione **desktop nativa** per l'archiviazione e la consultazion
 ### ✅ Gate G1 — Scaffold (COMPLETATO)
 
 | Funzionalità | Stato |
-|-------------|:---:|
+|---|---|
 | Tauri v2 + React + TypeScript + Vite | ✅ |
 | Dashboard, Upload, Chat, Viewer, Settings | ✅ |
 | Navigazione 6 route | ✅ |
 | i18n IT/EN | ✅ |
-| Test 15/15 passati (100% frontend) | ✅ |
 
-### ✅ Gate G2 — Backend (COMPLETATO)
+### ✅ Gate G2 — Backend Base (COMPLETATO)
 
 | Funzionalità | Stato |
-|-------------|:---:|
+|---|---|
 | SQLite database + FTS5 schema | ✅ `db.rs` |
-| Parser PDF/DOCX | ✅ `parsers.rs` |
+| Parser PDF/DOCX/XLSX | ✅ `parsers.rs` |
+| Ollama detection/download/status | ✅ `ollama.rs` |
 | Migrations e init scripts | ✅ |
-| Comandi Tauri integrati | ✅ `lib.rs` |
 
-### ✅ Design System (COMPLETATO)
+### ✅ Design System (COMPLETATO — Salvatore)
 
 | Funzionalità | Stato |
-|-------------|:---:|
+|---|---|
 | Palette colori ufficiale SMOT | ✅ |
 | Graph View (8 componenti React) | ✅ |
 | Hooks (useForceGraph, useAnimation, etc.) | ✅ |
 | Animazioni CSS catalogate (12 categorie) | ✅ |
 
-### ⏳ In Corso
+### ✅ Installer + CI/CD (COMPLETATO — Michele)
 
-| Area | Branch | Stato |
-|------|--------|:---:|
-| **Installer Windows + Wizard** | `installer` | 📋 Pianificato (21 task) |
-| **Ricerca FTS5** | `main` | ⏳ Da implementare |
-| **Indicizzazione reale** | `main` | ⏳ Da implementare |
-| **Chat RAG con Ollama** | `main` | ⏳ Da implementare |
+| Funzionalità | Stato |
+|---|---|
+| Windows (.exe/.msi) + macOS (.dmg) + Linux (.AppImage/.deb) | ✅ |
+| Wizard onboarding 5 step | ✅ |
+| GitHub Actions CI/CD | ✅ |
+| Auto-updater plugin | ✅ |
+| GPU detection (OS-specific) | ✅ |
 
----
+### ⚠️ In Corso — Wave 1 (Piano Team)
 
-## 📋 Test Results
+| Task | Chi | Stato |
+|---|---|---|
+| **10 comandi Rust stub → reali** (B1-B10) | Michele | ⏳ Da implementare |
+| **4 funzioni database** (D1-D4) | Tommaso | ⏳ Da implementare |
+| **6 polish frontend** (F1-F6) | Salvatore | ⏳ Da implementare |
+| **4 fix sicurezza** (S1-S4) | Tommaso | ⏳ Da implementare |
 
-**Data:** 2026-05-07  
-**Risultato:** ✅ **100% pass** (15/15 test)
-
-| # | Test | Stato |
-|---|------|:---:|
-| 1-15 | Navigation, Upload, Chat, Viewer, Settings, i18n, System Panel | ✅ |
+> 📋 **Piano completo:** [`.sisyphus/plans/smot-team-plan.md`](.sisyphus/plans/smot-team-plan.md)
 
 ---
 
 ## 🎨 Palette Colori Ufficiale
 
 | Nome | Hex | Uso |
-|------|-----|-----|
+|---|---|---|
 | Navy Scuro | `#0a1a3b` | Sfondo |
 | Indaco | `#4338f5` | Gradienti, accenti |
 | Viola | `#894df8` | Hover, gradienti |
@@ -96,7 +108,7 @@ SMOT è un'applicazione **desktop nativa** per l'archiviazione e la consultazion
 ## 🏗️ Stack Tecnologico
 
 | Layer | Tecnologia |
-|-------|------------|
+|---|---|
 | Framework Desktop | Tauri v2 |
 | Frontend | React 19 + TypeScript + Vite |
 | Backend | Rust |
@@ -106,16 +118,26 @@ SMOT è un'applicazione **desktop nativa** per l'archiviazione e la consultazion
 
 ---
 
-## 📚 Piani Strategici
+## 📚 Piani di Lavoro (OpenCode Ready)
 
-| Piano | File | Contenuto |
-|-------|------|-----------|
-| Migrazione v1→v2 | `smot-v2-migration.md` | 20 task, architettura, rischi |
-| Gate G2 Persistenza | `smot-g2-persistence.md` | 12 task, SQLite, parser, AI |
-| Animazioni & Design | `smot-animations-design.md` | 12 categorie CSS, Graph View plan |
-| Distribuzione | `smot-distribution-onboarding.md` | Licensing, onboarding, system detection |
-| Installer Windows | `smot-installer-windows-ai.md` | NSIS config, modelli IA, CI/CD |
-| Implementazione Installer | `smot-installer-implementation.md` | 21 task, 6 fasi, branch `installer` |
+| Piano | Per | File | Task |
+|---|---|---|---|
+| **Team Plan** (master) | Tutti | [`smot-team-plan.md`](.sisyphus/plans/smot-team-plan.md) | 28 |
+| **Michele** — Backend Rust | Michele | [`smot-michele-backend.md`](.sisyphus/plans/smot-michele-backend.md) | 11 |
+| **Salvatore** — Frontend React | Salvatore | [`smot-salvatore-frontend.md`](.sisyphus/plans/smot-salvatore-frontend.md) | 7 |
+| **Tommaso** — DB & Sicurezza | Tommaso | [`smot-tommaso-db-security.md`](.sisyphus/plans/smot-tommaso-db-security.md) | 9 |
+
+> 🚀 Ogni piano si esegue con `/start-work <nome-piano>`
+
+### Piani Completati (archivio)
+
+| Piano | File | Stato |
+|---|---|---|
+| Installer Implementation | `archive/smot-installer-implementation.md` | ✅ Completato |
+| Installer Windows AI | `archive/smot-installer-windows-ai.md` | ✅ Completato |
+| Animations & Design | `archive/smot-animations-design.md` | ✅ Completato |
+| Gate G2 Persistence | `smot-g2-persistence.md` | ✅ Completato |
+| Distribution & Onboarding | `smot-distribution-onboarding.md` | ✅ Completato |
 
 ---
 
