@@ -4,87 +4,144 @@
 
 ---
 
-## Team
+## 🎯 Cos'è SMOT
 
-| Sviluppatore | Ruolo | Completato |
+SMOT è un'applicazione **desktop nativa** per l'archiviazione e la consultazione intelligente di documenti. Funziona completamente offline, senza cloud, senza telemetria.
+
+- 📄 **Carica documenti** — PDF, DOCX, TXT, XLSX
+- 🔍 **Ricerca full-text** — FTS5 immediata
+- 💬 **Chat RAG** — Ollama + ricerca contestuale
+- 🧠 **IA Locale** — Opzionale, privata, sul tuo PC
+- 🕸️ **Graph View** — Connessioni tra documenti
+- 🌐 **Bilingue** — Italiano / English
+- 💻 **Cross-Platform** — Windows (.exe), macOS (.dmg), Linux (.deb/.AppImage)
+- 🔒 **100% Offline** — Zero telemetria
+
+---
+
+## 👥 Team
+
+| Sviluppatore | GitHub | Ruolo | Task |
+|---|---|---|---|
+| **Michele** | BigBoss133 | Backend Rust + Release + Landing API | ✅ 21/21 |
+| **Salvatore** | salvograsso10 | Frontend React + UI/UX + Landing Page | ✅ 10/10 |
+| **Tommaso** | — | Database + Sicurezza + CI | ✅ 9/9 |
+
+> 🎉 **34/34 task completati** — Pronti per la beta release
+
+---
+
+## 📊 Stato Attuale
+
+```
+MICHELE    ████████████████ 100%  Backend Rust: 10 comandi reali + indexing + setup + landing API
+SALVATORE  ████████████████ 100%  Frontend React: 7 componenti + 3 fix wizard + landing page
+TOMMASO    ████████████████ 100%  DB refactoring + Security (S1-S4) + CI fix + dead code
+```
+
+### Michele — Backend + Landing API
+- 10 comandi Tauri stub → reali (sysinfo, SQLite, FTS5, Ollama RAG)
+- Modulo indexing.rs (395 righe: chunking → embedding → FTS5)
+- Setup onboarding con check config + complete_onboarding
+- Apple Silicon detection (memoria unificata, ram_available_gb)
+- Branch release/v0.1.0-beta + chiave updater
+- Landing page backend API (Express + Stripe + JWT + license management)
+
+### Salvatore — Frontend
+- ErrorBoundary con fallback UI
+- Loading skeletons (Dashboard, Chat, Viewer)
+- Empty states per pagine vuote
+- ConfirmDialog per azioni distruttive
+- Toast notifications (success/error/info/warning)
+- Real-time indexing progress via eventi Tauri
+- Wizard full-screen (nasconde chrome in onboarding)
+- SystemDiscoveryStep con memoria unificata
+
+### Tommaso — DB + Security
+- Funzioni DB estratte in db.rs (insert_document, get_all_documents, update_indexing_status, search_fts5)
+- Input validation su tutti i comandi Tauri
+- Rate limiting Ollama (5 richieste/sec)
+- Sanitizzazione filename upload (path traversal, nomi riservati)
+- Config audit (nessun secret in chiaro)
+- Dead code rimosso (JobInput, IndexingFileStatus)
+- CI fix (branch trigger aggiornati)
+
+---
+
+## 🏗️ Stack Tecnologico
+
+| Layer | Tecnologia |
+|---|---|
+| Desktop | Tauri v2.11 |
+| Frontend | React 19 + TypeScript + Vite 8 |
+| Backend | Rust + sysinfo + rusqlite + reqwest |
+| Database | SQLite + FTS5 |
+| IA | Ollama (opzionale) |
+| CI/CD | GitHub Actions (Windows/macOS/Linux) |
+| Installer | NSIS (Win), DMG (Mac), AppImage/deb (Linux) |
+| Landing API | Node.js + Express + Stripe + JWT |
+
+---
+
+## ✅ Build Status
+
+| Comando | Risultato |
+|---------|:--------:|
+| `cargo build` | ✅ 0 errori |
+| `npx tsc --noEmit` | ✅ 0 errori |
+| `npm run build` | ✅ 321 KB JS, 16 KB CSS |
+
+---
+
+## 🌿 Branch
+
+| Branch | Stato |
+|--------|:----:|
+| `main` | 🟢 Sviluppo attivo |
+| `release/v0.1.0-beta` | 🟢 Release beta (tutti i fix) |
+| `docs/install-guides` | 🟢 Guide installazione per OS |
+
+---
+
+## 📚 Piani di Lavoro
+
+Tutti in `.sisyphus/plans/` — eseguibili con `/start-work`:
+
+| Piano | Per | Task |
 |---|---|---|
-| **Michele** (BigBoss133) | Backend Rust + Release | ✅ 15/15 |
-| **Salvatore** (salvograsso10) | Frontend React + UI/UX | ✅ 10/10 |
-| **Tommaso** | Database + Sicurezza + CI | ✅ 9/9 |
-
-> Tutti i task completati — 34/34. Pronti per la beta.
-
----
-
-## Stato Attuale
-
-```
-Michele    ████████████████ 100% ✅  Backend Rust (10 comandi + indexing + onboarding)
-Salvatore  ████████████████ 100% ✅  Frontend React (7 componenti + 3 fix wizard)
-Tommaso    ████████████████ 100% ✅  DB refactoring + Security + CI fix + dead code
-```
-
-### Michele (Backend)
-- 10 comandi Tauri stub → reali (sysinfo, SQLite, Ollama RAG, FTS5)
-- Indexing pipeline (chunking → embedding → FTS5)
-- Setup onboarding + Apple Silicon detection
-- Branch release/v0.1.0-beta con chiave updater
-- FIX installer: config check, complete_onboarding, unified memory, ram_available
-
-### Salvatore (Frontend)
-- ErrorBoundary, Skeleton, EmptyState, ConfirmDialog, Toast
-- Real-time indexing progress listener
-- FIX-4: App.tsx wizard full-screen
-- FIX-5: OnboardingPage complete_onboarding call
-- FIX-6: SystemDiscoveryStep unified memory display
-
-### Tommaso (DB + Security)
-- C3: Archiviare piani obsoleti
-- D1-D4: Estrarre funzioni DB in db.rs (refactoring)
-- S1: Input validation comandi Tauri
-- S2: Rate limiting Ollama (5 req/sec)
-- S3: Sanitizzazione filename upload
-- S4: Pulizia dati sensibili config
-- Dead code: JobInput, IndexingFileStatus removed
-- CI fix: update trigger branches
+| `smot-team-plan.md` | Master | 34/34 ✅ |
+| `smot-michele-backend.md` | Michele | 15/15 ✅ |
+| `smot-salvatore-frontend.md` | Salvatore | 10/10 ✅ |
+| `smot-tommaso-db-security.md` | Tommaso | 9/9 ✅ |
+| `smot-installer-fix.md` | Installer | 8/8 ✅ |
+| `smot-installer-checklist.md` | UX Polish | 11 task |
+| `smot-landing-license.md` | Landing + Licenze | 13 task |
+| `smot-release-beta.md` | Release | 7/12 ⏳ |
 
 ---
 
-## Build
-
-| Layer | Comando | Risultato |
-|-------|---------|-----------|
-| Rust | cargo build | ✅ 0 errori |
-| TypeScript | npx tsc --noEmit | ✅ 0 errori |
-| Frontend | npm run build | ✅ 321 KB |
-
----
-
-## Piani di Lavoro
-
-Tutti in `.sisyphus/plans/`:
-- smot-team-plan.md — Piano master (34/34 completati)
-- smot-michele-backend.md — Michele (15/15)
-- smot-salvatore-frontend.md — Salvatore (10/10)
-- smot-tommaso-db-security.md — Tommaso (9/9)
-- smot-installer-fix.md — Fix (8/8)
-- smot-release-beta.md — Release (5/12)
-
----
-
-## Prossimo Passo: Beta Release
+## 🚀 Build per Beta
 
 ```bash
-cd ~/SMOT-APP
+git clone https://github.com/BigBoss133/SMOT-APP.git
+cd SMOT-APP
 git checkout release/v0.1.0-beta
-git pull
 cd smot-desktop
+npm install
 npm run tauri build
-# .dmg in src-tauri/target/release/bundle/dmg/
 ```
+
+Il file si trova in `smot-desktop/src-tauri/target/release/bundle/`
 
 ---
 
-**Repo:** https://github.com/BigBoss133/SMOT-APP
-**Guide OS:** INSTALL.md (branch docs/install-guides)
-**Audit:** AUDIT-REPORT.md
+## 🔗 Link
+
+- **Repo:** https://github.com/BigBoss133/SMOT-APP
+- **Landing:** https://github.com/BigBoss133/SMOT-Landing-page
+- **Guide OS:** `INSTALL.md` (branch `docs/install-guides`)
+- **Audit:** `AUDIT-REPORT.md`
+
+---
+
+*SMOT — Il tuo archivio intelligente, sul tuo computer, solo per te.*
