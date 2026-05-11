@@ -25,7 +25,7 @@ pub fn probe_system() -> SystemProfile {
     let os_name = format!(
         "{} {}",
         System::name().unwrap_or_else(|| "Unknown".to_string()),
-        System::os_version().unwrap_or_else(|| "".to_string())
+        System::os_version().unwrap_or_default()
     ).trim().to_string();
 
     let disks = Disks::new_with_refreshed_list();
@@ -134,7 +134,7 @@ fn detect_gpu(total_ram_gb: f32) -> (Option<String>, Option<f32>, bool, bool) {
 
 fn detect_nvidia_vram() -> Option<f32> {
     if let Ok(output) = std::process::Command::new("nvidia-smi")
-        .args(&["--query-gpu=memory.total", "--format=csv,noheader,nounits"])
+        .args(["--query-gpu=memory.total", "--format=csv,noheader,nounits"])
         .output()
     {
         let stdout = String::from_utf8_lossy(&output.stdout);

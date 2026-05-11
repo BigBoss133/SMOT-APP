@@ -164,29 +164,22 @@ pub async fn start_indexing(
                 return;
             }
         };
-        let rows = stmt.query_map([], |row| {
-            let id: String = row.get(0)?;
-            let name: String = row.get(1)?;
-            let path: String = row.get(2)?;
-            Ok((id, name, path))
-        });
-        match rows {
-            Ok(rows) => {
-                let mut result = Vec::new();
-                for r in rows {
-                    if let Ok(item) = r {
-                        result.push(item);
-                    }
-                }
-                result
-            }
+        let rows: Vec<(String, String, String)> = match stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+            ))
+        }) {
+            Ok(mapped) => mapped.filter_map(|r| r.ok()).collect(),
             Err(e) => {
                 let mut st = controller.state.lock().unwrap_or_else(|e| e.into_inner());
                 st.status = "error".to_string();
                 st.error = Some(format!("DB query error: {}", e));
                 return;
             }
-        }
+        };
+        rows
     };
 
     let total = documents.len() as u32;
@@ -352,7 +345,7 @@ pub async fn start_indexing(
             let completed_docs = doc_idx as u32;
             let remaining_docs = total.saturating_sub(completed_docs + 1);
             let eta = if completed_docs > 0 {
-                (elapsed / completed_docs as u64) * remaining_docs as u64
+                (elapsed / (completed_docs as u64)) * remaining_docs as u64
             } else {
                 0
             };

@@ -1,6 +1,25 @@
 use serde::{Deserialize, Serialize};
+use std::sync::Mutex;
+use std::time::Instant;
 use tauri::{AppHandle, Emitter};
 
+static RATE_LIMITS: Mutex<Vec<Instant>> = Mutex::new(Vec::new());
+const MAX_REQUESTS_PER_SEC: usize = 5;
+
+pub fn check_rate_limit() -> Result<(), String> {
+    let now = Instant::now();
+    let mut timestamps = RATE_LIMITS.lock().map_err(|e| e.to_string())?;
+    timestamps.retain(|t| now.duration_since(*t).as_secs_f32() < 1.0);
+    if timestamps.len() >= MAX_REQUESTS_PER_SEC {
+        let oldest = timestamps.first().map(|t| {
+            1.0 - now.duration_since(*t).as_secs_f32()
+        }).unwrap_or(1.0);
+        drop(timestamps);
+        return Err(format!("Rate limit exceeded, retry after {:.1}s", oldest.max(0.1)));
+    }
+    timestamps.push(now);
+    Ok(())
+}
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OllamaStatus {
     pub installed: bool,
@@ -69,10 +88,10 @@ pub async fn pull_ollama_model(model: String, app: AppHandle) -> Result<(), Stri
             let percent = if total > 0.0 { (completed / total) * 100.0 } else { 0.0 };
             let status_str = status["status"].as_str().unwrap_or("downloading").to_string();
             
-            let elapsed_secs = start_time.elapsed().as_secs_f64().max(0.001) as f32;
-            let completed_mb = completed / 1_048_576.0f32;
-            let total_mb = total / 1_048_576.0f32;
-            let speed_mbps = completed_mb / elapsed_secs;
+            let elapsed_secs = start_time.elapsed().as_secs_f64().max(0.001);
+            let completed_mb = completed / 1_048_576.0;
+            let total_mb = total / 1_048_576.0;
+            let speed_mbps = completed_mb / (elapsed_secs as f32);
             let eta_seconds = if speed_mbps > 0.01 {
                 ((total_mb - completed_mb) / speed_mbps) as i64
             } else {

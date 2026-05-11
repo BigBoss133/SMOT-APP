@@ -67,6 +67,7 @@ struct UploadResponse {
 
 #[derive(Deserialize)]
 struct StartIndexingInput {
+  #[allow(dead_code)]
   document_ids: Vec<String>,
 }
 
@@ -86,10 +87,8 @@ struct IndexingStatus {
   total_kb: u16,
 }
 
-#[derive(Deserialize)]
-struct StartIndexingInput {
-  document_ids: Vec<String>,
-}
+#[derive(Serialize)]
+struct ChatSource {
   document_id: String,
   document_name: String,
   page: u8,
@@ -99,6 +98,7 @@ struct StartIndexingInput {
 #[derive(Deserialize)]
 struct ChatQueryInput {
   question: String,
+  #[allow(dead_code)]
   filter_category: String,
 }
 
@@ -136,7 +136,7 @@ async fn get_system_status(state: tauri::State<'_, AppState>) -> Result<SystemSt
   let mut sys = System::new_all();
   sys.refresh_all();
 
-  let cpu = sys.global_cpu_usage() as u8;
+  let cpu = sys.cpus().first().map(|c| c.cpu_usage() as u8).unwrap_or(0);
   let ram_total = sys.total_memory() as f32 / 1073741824.0;
   let ram_used = (sys.total_memory() - sys.available_memory()) as f32 / 1073741824.0;
 
@@ -286,7 +286,7 @@ fn upload_documents(
 async fn start_indexing(
   app_handle: tauri::AppHandle,
   state: tauri::State<'_, AppState>,
-  payload: StartIndexingInput,
+  _payload: StartIndexingInput,
 ) -> Result<StartIndexingResponse, String> {
   {
     let ctrl_state = state.controller.state.lock().map_err(|e| e.to_string())?;
@@ -361,40 +361,41 @@ async fn chat_query(state: tauri::State<'_, AppState>, payload: ChatQueryInput) 
     return Err("Query too long (max 1000 characters)".to_string());
   }
 
-  // --- DB operations (lock is dropped before async) ---
-  let sources = {
-  let db = state.db.lock().map_err(|e| e.to_string())?;
+  ollama::check_rate_limit().map_err(|e| e.to_string())?;
 
-  // Build FTS5 search query from user question words
-  let search_query = payload.question.split_whitespace()
-    .filter(|w| w.len() > 2)
-    .map(|w| format!("\"{}\"", w))
-    .collect::<Vec<_>>()
-    .join(" OR ");
+  let (sources, context) = {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
 
-  let mut sources = Vec::new();
+    // Build FTS5 search query from user question words
+    let search_query = payload.question.split_whitespace()
+      .filter(|w| w.len() > 2)
+      .map(|w| format!("\"{}\"", w))
+      .collect::<Vec<_>>()
+      .join(" OR ");
 
-  if !search_query.is_empty() {
-    let results = db::search_fts5(&db, &search_query)
-      .map_err(|e| e.to_string())?;
-    for r in results {
-      sources.push(ChatSource {
-        document_id: r.document_id,
-        document_name: r.document_name,
-        page: (r.chunk_index as u8) + 1,
-        snippet: r.snippet,
-      });
+    let mut sources = Vec::new();
+
+    if !search_query.is_empty() {
+      let results = db::search_fts5(&db, &search_query)
+        .map_err(|e| e.to_string())?;
+      for r in results {
+        sources.push(ChatSource {
+          document_id: r.document_id,
+          document_name: r.document_name,
+          page: (r.chunk_index as u8) + 1,
+          snippet: r.snippet,
+        });
+      }
     }
-  }
 
-  sources
-  }; // DB lock is DROPPED here
+    // Build context from sources
+    let context = sources.iter()
+      .map(|s| format!("[Document: {} | Page: {}] {}", s.document_name, s.page, s.snippet))
+      .collect::<Vec<_>>()
+      .join("\n\n");
 
-  // Build context from sources
-  let context = sources.iter()
-    .map(|s| format!("[Document: {} | Page: {}] {}", s.document_name, s.page, s.snippet))
-    .collect::<Vec<_>>()
-    .join("\n\n");
+    (sources, context)
+  };
 
   // No results — return early
   if sources.is_empty() {
@@ -494,7 +495,7 @@ fn get_viewer_page(
   let total_pages = if let Some(pc) = doc_text.page_count {
     pc as u16
   } else {
-    ((lines.len() + lines_per_page - 1) / lines_per_page).max(1) as u16
+    lines.len().div_ceil(lines_per_page).max(1) as u16
   };
 
   // payload.page is 1-indexed from the frontend
@@ -546,7 +547,7 @@ pub fn run() {
       setup::complete_onboarding
     ])
     .setup(|app| {
-      let db_path = db::init_database(&app.handle())?;
+      let db_path = db::init_database(app.handle())?;
       let connection = Connection::open(&db_path)
         .expect("Failed to open database connection");
 

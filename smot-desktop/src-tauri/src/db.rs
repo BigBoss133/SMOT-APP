@@ -23,7 +23,6 @@ pub struct DocumentRow {
   pub name: String,
   pub file_type: String,
   pub size_bytes: i64,
-  pub created_at: String,
   pub indexed: bool,
 }
 
@@ -34,6 +33,7 @@ pub struct FtsResult {
   pub snippet: String,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn insert_document(
   conn: &Connection,
   id: &str,
@@ -53,7 +53,7 @@ pub fn insert_document(
 
 pub fn get_all_documents(conn: &Connection) -> Result<Vec<DocumentRow>, rusqlite::Error> {
   let mut stmt = conn.prepare(
-    "SELECT id, name, file_type, size_bytes, created_at, indexed FROM documents ORDER BY created_at DESC",
+    "SELECT id, name, file_type, size_bytes, indexed FROM documents ORDER BY created_at DESC",
   )?;
   let docs = stmt
     .query_map([], |row| {
@@ -62,8 +62,7 @@ pub fn get_all_documents(conn: &Connection) -> Result<Vec<DocumentRow>, rusqlite
         name: row.get(1)?,
         file_type: row.get(2)?,
         size_bytes: row.get(3)?,
-        created_at: row.get(4)?,
-        indexed: row.get(5)?,
+        indexed: row.get(4)?,
       })
     })?
     .filter_map(|r| r.ok())

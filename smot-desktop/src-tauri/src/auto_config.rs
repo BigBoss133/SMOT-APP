@@ -43,6 +43,7 @@ impl Tier {
         matches!(self, Tier::Premium | Tier::Standard)
     }
 
+    #[allow(dead_code)]
     pub fn display_name(&self) -> &str {
         match self {
             Tier::Premium => "Premium",
@@ -52,6 +53,7 @@ impl Tier {
         }
     }
 
+    #[allow(dead_code)]
     pub fn recommended_model(&self) -> Option<&str> {
         match self {
             Tier::Premium => Some("llama3.2:7b"),

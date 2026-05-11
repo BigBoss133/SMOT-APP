@@ -50,8 +50,8 @@ pub fn on_app_startup(app: &mut tauri::App) {
         }
     }
 
-    match crate::db::init_database(&app.handle()) {
-        Ok(_) => log::info!("SQLite inizializzato"),
+    match crate::db::init_database(app.handle()) {
+        Ok(db_path) => log::info!("SQLite inizializzato: {}", db_path.display()),
         Err(e) => { log::error!("Failed to init database: {}", e); return; }
     }
 
@@ -72,6 +72,8 @@ pub fn on_app_startup(app: &mut tauri::App) {
     let profile = system_probe::probe_system();
     let tier = auto_config::determine_tier(&profile);
 
+    let ai_enabled = tier.supports_ai();
+
     let config = Config {
         tier: tier.clone(),
         profile: profile.clone(),
@@ -79,7 +81,7 @@ pub fn on_app_startup(app: &mut tauri::App) {
         first_launch: chrono::Local::now().to_rfc3339(),
         language: "it".to_string(),
         license: None,
-        ai_enabled: tier.supports_ai(),
+        ai_enabled,
     };
 
     save_config(&config_path, &config);
@@ -96,6 +98,7 @@ pub fn on_app_startup(app: &mut tauri::App) {
     });
 }
 
+#[allow(dead_code)]
 pub fn load_config(app: &tauri::AppHandle) -> Option<Config> {
     let app_data_dir = app.path().app_data_dir().ok()?;
     let config_path = app_data_dir.join("config.json");
