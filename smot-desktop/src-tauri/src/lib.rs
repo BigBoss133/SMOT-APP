@@ -1,5 +1,6 @@
 mod auto_config;
 mod db;
+mod indexing;
 mod ollama;
 mod parsers;
 mod setup;
@@ -7,13 +8,14 @@ mod system_probe;
 
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use sysinfo::{Disks, System};
 use tauri::Manager;
 
 struct AppState {
   active_mode: Mutex<String>,
-  db: Mutex<Connection>,
+  db: Arc<Mutex<Connection>>,
+  controller: Arc<indexing::IndexingController>,
 }
 
 #[derive(Serialize)]
@@ -305,63 +307,74 @@ fn upload_documents(
 }
 
 #[tauri::command]
-fn start_indexing(payload: StartIndexingInput) -> StartIndexingResponse {
-  StartIndexingResponse {
-    job_id: format!("job-{}", payload.document_ids.len()),
+async fn start_indexing(
+  app_handle: tauri::AppHandle,
+  state: tauri::State<'_, AppState>,
+  payload: StartIndexingInput,
+) -> Result<StartIndexingResponse, String> {
+  {
+    let ctrl_state = state.controller.state.lock().map_err(|e| e.to_string())?;
+    if ctrl_state.status == "running" {
+      return Err("Indexing already in progress".to_string());
+    }
   }
+
+  {
+    let mut ctrl_state = state.controller.state.lock().map_err(|e| e.to_string())?;
+    ctrl_state.status = "running".to_string();
+    ctrl_state.completed_documents = 0;
+    ctrl_state.error = None;
+    state.controller.pause_flag.store(false, std::sync::atomic::Ordering::Relaxed);
+    state.controller.cancel_flag.store(false, std::sync::atomic::Ordering::Relaxed);
+  }
+
+  let controller = state.controller.clone();
+  let db = state.db.clone();
+
+  let app = app_handle.clone();
+  tauri::async_runtime::spawn(async move {
+    crate::indexing::start_indexing(app, controller, db).await;
+  });
+
+  Ok(StartIndexingResponse { job_id: "indexing-active".to_string() })
 }
 
 #[tauri::command]
-fn get_indexing_status(payload: JobInput) -> IndexingStatus {
-  let progress = if payload.job_id.ends_with('3') { 100 } else { 62 };
+fn get_indexing_status(state: tauri::State<AppState>) -> IndexingStatus {
+  let ctrl = state.controller.state.lock().unwrap_or_else(|e| e.into_inner());
+  let progress = if ctrl.total_documents > 0 {
+    ((ctrl.completed_documents as f32 / ctrl.total_documents as f32) * 100.0) as u8
+  } else {
+    0
+  };
   IndexingStatus {
-    status: if progress >= 100 {
-      "completed".to_string()
-    } else {
-      "running".to_string()
-    },
+    status: ctrl.status.clone(),
     overall_progress: progress,
-    completed_documents: if progress >= 100 { 2 } else { 1 },
-    total_documents: 2,
-    eta_seconds: if progress >= 100 { 0 } else { 58 },
-    processed_kb: if progress >= 100 { 2530 } else { 1540 },
-    total_kb: 2530,
-    files: vec![
-      IndexingFileStatus {
-        document_id: "doc-1".to_string(),
-        document_name: "Contratto_Fornitura_2026.pdf".to_string(),
-        file_progress: progress,
-        chunk_done: if progress >= 100 { 12 } else { 8 },
-        chunk_total: 12,
-        embedding_done: if progress >= 100 { 12 } else { 7 },
-        embedding_total: 12,
-      },
-      IndexingFileStatus {
-        document_id: "doc-2".to_string(),
-        document_name: "Piano_Studio_AI.docx".to_string(),
-        file_progress: if progress >= 100 { 100 } else { 40 },
-        chunk_done: if progress >= 100 { 10 } else { 4 },
-        chunk_total: 10,
-        embedding_done: if progress >= 100 { 10 } else { 3 },
-        embedding_total: 10,
-      },
-    ],
+    completed_documents: ctrl.completed_documents as u8,
+    total_documents: ctrl.total_documents as u8,
+    eta_seconds: ctrl.eta_seconds as u16,
+    processed_kb: 0,
+    total_kb: 0,
+    files: vec![],
   }
 }
 
 #[tauri::command]
-fn pause_indexing(_payload: JobInput) -> serde_json::Value {
-  serde_json::json!({"status": "paused"})
+fn pause_indexing(state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
+  state.controller.pause_flag.store(true, std::sync::atomic::Ordering::Relaxed);
+  Ok(serde_json::json!({"status": "pausing"}))
 }
 
 #[tauri::command]
-fn resume_indexing(_payload: JobInput) -> serde_json::Value {
-  serde_json::json!({"status": "running"})
+fn resume_indexing(state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
+  state.controller.pause_flag.store(false, std::sync::atomic::Ordering::Relaxed);
+  Ok(serde_json::json!({"status": "running"}))
 }
 
 #[tauri::command]
-fn continue_in_background(_payload: JobInput) -> serde_json::Value {
-  serde_json::json!({"status": "background"})
+fn continue_in_background(state: tauri::State<AppState>) -> Result<serde_json::Value, String> {
+  state.controller.pause_flag.store(false, std::sync::atomic::Ordering::Relaxed);
+  Ok(serde_json::json!({"status": "background"}))
 }
 
 #[tauri::command]
@@ -486,7 +499,8 @@ pub fn run() {
 
       let state = AppState {
         active_mode: Mutex::new("Balanced".to_string()),
-        db: Mutex::new(connection),
+        db: Arc::new(Mutex::new(connection)),
+        controller: Arc::new(indexing::IndexingController::new()),
       };
       app.manage(state);
 
