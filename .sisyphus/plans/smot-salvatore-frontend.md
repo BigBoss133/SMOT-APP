@@ -1,11 +1,27 @@
 # SMOT — Piano Salvatore (Frontend React)
 
 > **Team Plan:** `.sisyphus/plans/smot-team-plan.md` | **Repo:** BigBoss133/SMOT-APP
+> **🛡️ Guardrails:** Leggere [`GUARDRAILS.md`](../../GUARDRAILS.md) prima di iniziare
 
 ## TL;DR
 
 > **Salvatore**: 7 task — 1 cleanup + 6 frontend polish. ~14h.
-> **Obiettivo**: Aggiungere ErrorBoundary, loading skeletons, empty states, dialog, toast e real-time indexing progress.
+
+---
+
+## 🛡️ Guardrails
+
+| Regola | Dettaglio |
+|---|---|
+| **Branch** | `feat/nome-task` → PR → review → merge in main |
+| **Commit** | `tipo(scope): descrizione` (es. `feat(frontend): add ErrorBoundary`) |
+| **Pre-push** | `npx tsc --noEmit && npm run build` |
+| **Aree off-limits** | `lib.rs` (comandi Tauri), `src-tauri/` (tutto il backend Rust) |
+| **File condivisi** | Avvisare il team prima di toccare `package.json`, `tauri.conf.json` |
+| **Stile** | NO inline styles → CSS modules. Tutti i testi in i18n (IT/EN). |
+| **Accessibilità** | Ogni bottone con sola icona deve avere `aria-label` |
+
+> 📖 Tutte le regole: [`GUARDRAILS.md`](../../GUARDRAILS.md)
 
 ---
 
@@ -16,8 +32,6 @@
   **What to do**: Eliminare `backend/`, `frontend/`, `test_reports/`. NON toccare `smot-desktop/`.
   
   **QA**: `ls -d backend/ frontend/ test_reports/ 2>&1` → "No such file" per tutte
-  
-  **Commit**: `chore: remove orphan directories`
 
 ---
 
@@ -33,8 +47,6 @@
 
   **QA Playwright**: Navigare a pagina con errore → fallback UI mostrato → "Riprova" funziona
 
-  **Commit**: `feat(frontend): add ErrorBoundary`
-
 - [ ] F2. Loading skeletons
 
   **What to do**:
@@ -45,8 +57,6 @@
 
   **QA Playwright**: Throttling rete → skeleton visibili → scompaiono con dati
 
-  **Commit**: `feat(frontend): add loading skeletons`
-
 - [ ] F3. Empty state
 
   **What to do**:
@@ -56,8 +66,6 @@
   - ChatPage: "Nessun documento indicizzato"
 
   **QA Playwright**: Dashboard con DB vuoto → empty state + pulsante naviga a /upload
-
-  **Commit**: `feat(frontend): add EmptyState component`
 
 ---
 
@@ -74,8 +82,6 @@
 
   **QA Playwright**: Apri Settings → clicca "Elimina modello" → dialog appare → "Annulla" chiude → riconferma esegue azione
 
-  **Commit**: `feat(frontend): add ConfirmDialog`
-
 - [ ] F5. Componente Toast notifiche
 
   **What to do**:
@@ -87,8 +93,6 @@
 
   **QA Playwright**: Trigger upload → toast verde appare → scompare dopo 5s
 
-  **Commit**: `feat(frontend): add Toast notification system`
-
 - [ ] F6. Event listener `indexing-progress` real-time
 
   **What to do**:
@@ -99,13 +103,17 @@
 
   **QA Playwright**: Avvia indexing → progress bar si aggiorna in tempo reale
 
-  **Commit**: `feat(frontend): add real-time indexing progress`
-
 ---
+
+## Pre-Push Checklist
+
+```bash
+cd smot-desktop
+npx tsc --noEmit && npm run build
+```
 
 ## Success Criteria
 
 ```bash
-cd smot-desktop && npx tsc --noEmit  # exit 0
 ls src/components/ErrorBoundary.tsx src/components/Skeleton.tsx src/components/EmptyState.tsx src/components/ConfirmDialog.tsx src/components/Toast.tsx  # tutti esistono
 ```

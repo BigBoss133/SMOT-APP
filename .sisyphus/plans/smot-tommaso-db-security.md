@@ -1,12 +1,29 @@
 # SMOT — Piano Tommaso (Database + Sicurezza)
 
 > **Team Plan:** `.sisyphus/plans/smot-team-plan.md` | **Repo:** BigBoss133/SMOT-APP
-> **⚠️ PRIMA DI INIZIARE:** Leggere `smot-desktop/src-tauri/src/db.rs` e `smot-desktop/src-tauri/migrations/` per capire lo schema DB esistente.
+> **🛡️ Guardrails:** Leggere [`GUARDRAILS.md`](../../GUARDRAILS.md) prima di iniziare
 
 ## TL;DR
 
 > **Tommaso**: 9 task — 1 cleanup + 4 DB functions + 4 security. ~12h.
-> **Obiettivo**: Implementare funzioni CRUD SQLite, search FTS5, input validation, rate limiting e sanitization.
+
+---
+
+## 🛡️ Guardrails
+
+| Regola | Dettaglio |
+|---|---|
+| **Branch** | `feat/nome-task` → PR → review → merge in main |
+| **Commit** | `tipo(scope): descrizione` (es. `feat(db): add insert_document function`) |
+| **Pre-push** | `cargo test && cargo clippy -- -D warnings` |
+| **Pre-push (security)** | `grep -r "sk-\|api_key\|password" . --include="*.rs" --include="*.json"` → DEVE essere vuoto |
+| **Aree off-limits** | `ollama.rs`, `setup.rs`, `system_probe.rs`, `auto_config.rs`, `parsers.rs`, schema DB esistente (`migrations/`) |
+| **File condivisi** | Avvisare il team prima di toccare `Cargo.toml`, `db.rs` (parti esistenti) |
+| **⚠️ Onboarding** | PRIMA di iniziare: leggi `smot-desktop/src-tauri/src/db.rs` e `smot-desktop/src-tauri/migrations/` |
+| **SQL** | SOLO prepared statements. MAI concatenare stringhe SQL. |
+| **Sicurezza** | Ogni funzione deve validare input. Nessun secret in chiaro. |
+
+> 📖 Tutte le regole: [`GUARDRAILS.md`](../../GUARDRAILS.md)
 
 ---
 
@@ -20,8 +37,6 @@
   - Aggiungere link a `smot-team-plan.md` nel README
 
   **QA**: `ls .sisyphus/plans/archive/` → contiene i 3 piani | `grep "✅" README.md` → installer completato
-
-  **Commit**: `docs: archive obsolete plans, update README`
 
 ---
 
@@ -43,8 +58,6 @@ documents_fts(id, filename, content) -- FTS5 virtual table
 
   **QA**: `cargo test insert_document` → documento inserito con UUID valido
 
-  **Commit**: `feat(db): add insert_document function`
-
 - [ ] D2. `get_all_documents()` in `db.rs`
 
   **What to do**:
@@ -54,8 +67,6 @@ documents_fts(id, filename, content) -- FTS5 virtual table
 
   **QA**: `cargo test get_all_documents` → array di Document ordinato per data
 
-  **Commit**: `feat(db): add get_all_documents with Document struct`
-
 - [ ] D3. `update_indexing_status()` in `db.rs`
 
   **What to do**:
@@ -63,8 +74,6 @@ documents_fts(id, filename, content) -- FTS5 virtual table
   - SQL: `UPDATE documents SET indexed = ?1 WHERE id = ?2`
 
   **QA**: `cargo test update_indexing_status` → flag indexed cambiato nel DB
-
-  **Commit**: `feat(db): add update_indexing_status function`
 
 - [ ] D4. `search_fts5()` in `db.rs`
 
@@ -74,8 +83,6 @@ documents_fts(id, filename, content) -- FTS5 virtual table
   - SQL: `SELECT filename, snippet(documents_fts, 0, '<mark>', '</mark>', '...', 30), id FROM documents_fts WHERE documents_fts MATCH ?1 ORDER BY rank LIMIT 10`
 
   **QA**: `cargo test search_fts5` → risultati con snippet HTML e highlighting
-
-  **Commit**: `feat(db): add search_fts5 function with snippet highlighting`
 
 ---
 
@@ -91,10 +98,6 @@ documents_fts(id, filename, content) -- FTS5 virtual table
     - `pull_ollama_model`: solo `[a-zA-Z0-9:._-]`
   - Restituire `Err("Invalid input: ...")` con messaggio descrittivo
 
-  **QA**: `cargo test` — input malevolo bloccato, input valido accettato
-
-  **Commit**: `feat(security): add input validation to all Tauri commands`
-
 - [ ] S2. Rate limiting chiamate Ollama
 
   **What to do**:
@@ -102,10 +105,6 @@ documents_fts(id, filename, content) -- FTS5 virtual table
   - Implementazione: `Arc<Mutex<Vec<Instant>>>` + cleanup periodico
   - Se superato: errore "Rate limit exceeded, retry after X seconds"
   - Applicare a `pull_ollama_model` e `chat_query`
-
-  **QA**: `cargo test` — 10 richieste in <1s → prime 5 ok, ultime 5 bloccate
-
-  **Commit**: `feat(security): add rate limiting to Ollama calls (5 req/sec)`
 
 - [ ] S3. Sanitizzazione filename upload
 
@@ -116,10 +115,6 @@ documents_fts(id, filename, content) -- FTS5 virtual table
     - Bloccare nomi riservati Windows: `CON, PRN, AUX, NUL, COM1-9, LPT1-9`
   - Salvare con UUID interno, nome originale nei metadata
 
-  **QA**: `cargo test` — path traversal bloccato, nomi riservati rinominati, nome normale invariato
-
-  **Commit**: `feat(security): sanitize upload filenames`
-
 - [ ] S4. Pulizia dati sensibili in config
 
   **What to do**:
@@ -127,15 +122,18 @@ documents_fts(id, filename, content) -- FTS5 virtual table
   - Verificare `.gitignore` copra `.env`, `*.pem`, `*.key`
   - Se secrets presenti, migrare a variabili d'ambiente
 
-  **QA**: `grep -r "sk-\|api_key\|password\|secret" smot-desktop/src-tauri/tauri.conf.json` → nessun match
-
-  **Commit**: `feat(security): audit config for secrets`
-
 ---
+
+## Pre-Push Checklist
+
+```bash
+cd smot-desktop/src-tauri
+cargo test
+grep -r "sk-\|api_key\|password\|secret" . --include="*.rs" --include="*.json"  # DEVE essere vuoto
+```
 
 ## Success Criteria
 
 ```bash
 cd smot-desktop/src-tauri && cargo test  # tutti i test passano
-grep -r "sk-\|api_key" smot-desktop/src-tauri/  # nessun match (nessun secret in chiaro)
 ```
