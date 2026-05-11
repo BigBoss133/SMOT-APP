@@ -378,18 +378,104 @@ fn continue_in_background(state: tauri::State<AppState>) -> Result<serde_json::V
 }
 
 #[tauri::command]
-fn chat_query(payload: ChatQueryInput) -> ChatResponse {
-  ChatResponse {
-    answer: format!(
-      "Risposta locale simulata per: '{}'. Filtro attivo: {}.",
-      payload.question, payload.filter_category
-    ),
-    sources: vec![ChatSource {
-      document_id: "doc-1".to_string(),
-      document_name: "Contratto_Fornitura_2026.pdf".to_string(),
-      page: 2,
-      snippet: "Estratto rilevante collegato alla tua domanda.".to_string(),
-    }],
+async fn chat_query(state: tauri::State<'_, AppState>, payload: ChatQueryInput) -> Result<ChatResponse, String> {
+  if payload.question.trim().is_empty() {
+    return Err("Query cannot be empty".to_string());
+  }
+
+  let db = state.db.lock().map_err(|e| e.to_string())?;
+
+  // Build FTS5 search query from user question words
+  let search_query = payload.question.split_whitespace()
+    .filter(|w| w.len() > 2)
+    .map(|w| format!("\"{}\"", w))
+    .collect::<Vec<_>>()
+    .join(" OR ");
+
+  let mut sources = Vec::new();
+
+  if !search_query.is_empty() {
+    let fts_sql = format!(
+      "SELECT c.document_id, d.name, c.chunk_index, snippet(fts_documents, 0, '<mark>', '</mark>', '...', 40) as snippet \
+       FROM fts_documents fts \
+       JOIN document_chunks c ON fts.rowid = c.rowid \
+       JOIN documents d ON c.document_id = d.id \
+       WHERE fts_documents MATCH ?1 \
+       ORDER BY rank \
+       LIMIT 5"
+    );
+
+    let mut stmt = db.prepare(&fts_sql).map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map(rusqlite::params![&search_query], |row| {
+      let doc_id: String = row.get(0)?;
+      let doc_name: String = row.get(1)?;
+      let chunk_idx: i64 = row.get(2)?;
+      let snippet_text: String = row.get(3)?;
+
+      Ok(ChatSource {
+        document_id: doc_id,
+        document_name: doc_name,
+        page: (chunk_idx as u8) + 1,
+        snippet: snippet_text,
+      })
+    }).map_err(|e| e.to_string())?;
+
+    for row in rows {
+      if let Ok(source) = row {
+        sources.push(source);
+      }
+    }
+  }
+
+  // Build context from sources
+  let context = sources.iter()
+    .map(|s| format!("[Document: {} | Page: {}] {}", s.document_name, s.page, s.snippet))
+    .collect::<Vec<_>>()
+    .join("\n\n");
+
+  // No results — return early
+  if sources.is_empty() {
+    return Ok(ChatResponse {
+      answer: "No relevant documents found for your query. Try different keywords or upload more documents.".to_string(),
+      sources: vec![],
+    });
+  }
+
+  // Build prompt for Ollama
+  let system_prompt = "You are a document assistant. Answer the user's question based ONLY on the provided context. If the context doesn't contain enough information, say so. Be concise.";
+  let user_prompt = format!("Context:\n{}\n\nQuestion: {}", context, payload.question);
+
+  let client = reqwest::Client::new();
+  let ollama_payload = serde_json::json!({
+    "model": "llama3.1:8b",
+    "prompt": format!("{}\n\n{}", system_prompt, user_prompt),
+    "stream": false,
+    "options": { "temperature": 0.3, "num_predict": 500 }
+  });
+
+  match client.post("http://localhost:11434/api/generate")
+    .json(&ollama_payload)
+    .timeout(std::time::Duration::from_secs(30))
+    .send()
+    .await
+  {
+    Ok(resp) => {
+      let body: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+      let answer = body["response"].as_str().unwrap_or("No response from model").to_string();
+      Ok(ChatResponse { answer, sources })
+    },
+    Err(_) => {
+      // Fallback when Ollama is not running
+      Ok(ChatResponse {
+        answer: format!(
+          "I found {} relevant documents, but Ollama is not running. Start Ollama to get AI-powered answers.\n\nFound documents:\n{}",
+          sources.len(),
+          sources.iter().map(|s| format!("- {} (page {})", s.document_name, s.page)).collect::<Vec<_>>().join("\n")
+        ),
+        sources,
+      })
+    }
   }
 }
 
