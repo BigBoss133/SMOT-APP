@@ -5,12 +5,14 @@ mod parsers;
 mod setup;
 mod system_probe;
 
+use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
+use sysinfo::{Disks, System};
 
-#[derive(Default)]
 struct AppState {
   active_mode: Mutex<String>,
+  db: Mutex<Connection>,
 }
 
 #[derive(Serialize)]
@@ -172,18 +174,40 @@ fn sample_documents() -> Vec<ViewerDocument> {
 }
 
 #[tauri::command]
-fn get_system_status() -> SystemStatus {
-  SystemStatus {
+async fn get_system_status(state: tauri::State<'_, AppState>) -> Result<SystemStatus, String> {
+  let mut sys = System::new_all();
+  sys.refresh_all();
+
+  let cpu = sys.global_cpu_info().cpu_usage() as u8;
+  let ram_total = sys.total_memory() as f32 / 1073741824.0;
+  let ram_used = (sys.total_memory() - sys.available_memory()) as f32 / 1073741824.0;
+
+  let disks = Disks::new_with_refreshed_list();
+  let total_storage = disks.iter().fold(0u64, |acc, d| acc + d.total_space()) as f32 / 1073741824.0;
+
+  let (doc_count, indexed_count) = {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let docs: i64 = db.query_row("SELECT COUNT(*) FROM documents", [], |r| r.get(0)).unwrap_or(0);
+    let indexed: i64 = db.query_row("SELECT COUNT(*) FROM documents WHERE indexed = 1", [], |r| r.get(0)).unwrap_or(0);
+    (docs as u16, indexed as u16)
+  };
+
+  let active_model = match crate::ollama::check_ollama_status().await {
+    status if status.running => status.models.first().cloned().unwrap_or_else(|| "none".to_string()),
+    _ => "none (Ollama not running)".to_string(),
+  };
+
+  Ok(SystemStatus {
     offline_secure: true,
-    ram_used_gb: 6.4,
-    ram_total_gb: 16.0,
-    cpu_percent: 21,
-    gpu_percent: 13,
-    documents_total: 3,
-    documents_indexed: 2,
-    storage_total_gb: 512,
-    active_model: "llama3.1:8b".to_string(),
-  }
+    ram_used_gb: (ram_used * 10.0).round() / 10.0,
+    ram_total_gb: (ram_total * 10.0).round() / 10.0,
+    cpu_percent: cpu,
+    gpu_percent: 0,
+    documents_total: doc_count,
+    documents_indexed: indexed_count,
+    storage_total_gb: total_storage as u16,
+    active_model,
+  })
 }
 
 #[tauri::command]
@@ -336,12 +360,7 @@ fn parse_document_text(payload: ParseDocumentInput) -> Result<parsers::ParsedDoc
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  let state = AppState {
-    active_mode: Mutex::new("Balanced".to_string()),
-  };
-
   tauri::Builder::default()
-    .manage(state)
     .invoke_handler(tauri::generate_handler![
       ollama::get_ollama_status,
       ollama::pull_ollama_model,
@@ -361,6 +380,16 @@ pub fn run() {
       parse_document_text
     ])
     .setup(|app| {
+      let db_path = db::init_database(&app.handle())?;
+      let connection = Connection::open(&db_path)
+        .expect("Failed to open database connection");
+
+      let state = AppState {
+        active_mode: Mutex::new("Balanced".to_string()),
+        db: Mutex::new(connection),
+      };
+      app.manage(state);
+
       setup::on_app_startup(app);
 
       if cfg!(debug_assertions) {
