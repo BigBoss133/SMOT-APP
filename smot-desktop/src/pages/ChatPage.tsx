@@ -1,8 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { MessageSquare, Trash2 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
-import { sendQuestion } from "../services/api";
+import { sendQuestion, getDocuments } from "../services/api";
+import { useToast } from "../hooks/useToast";
+import EmptyState from "../components/EmptyState";
+import Skeleton from "../components/Skeleton";
+import ConfirmDialog from "../components/ConfirmDialog";
 import type { ChatSource } from "../types";
 
 const filters = ["Tutti", "Lavoro", "Studio", "Personale"];
@@ -12,12 +17,10 @@ interface ChatMessage {
   content: string;
 }
 
-function ThinkingDots() {
+function ThinkingSkeleton() {
   return (
-    <div className="thinking-dots" aria-label="SMOT sta pensando...">
-      <span className="thinking-dot" />
-      <span className="thinking-dot" />
-      <span className="thinking-dot" />
+    <div style={{ padding: "8px 0" }} data-testid="chat-skeleton">
+      <Skeleton count={3} height={14} variant="text" />
     </div>
   );
 }
@@ -26,16 +29,25 @@ export default function ChatPage() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const text = translations[language];
+  const toast = useToast();
   const [selectedFilter, setSelectedFilter] = useState("Tutti");
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sources, setSources] = useState<ChatSource[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasIndexedDocs, setHasIndexedDocs] = useState<boolean | null>(null);
+  const [showClearDialog, setShowClearDialog] = useState(false);
 
   const canSend = useMemo(
     () => Boolean(question.trim()) && !loading,
     [question, loading]
   );
+
+  useEffect(() => {
+    void getDocuments().then((docs) => {
+      setHasIndexedDocs(docs.some((d) => d.indexed));
+    });
+  }, []);
 
   const onSubmit = async () => {
     if (!canSend) return;
@@ -50,6 +62,8 @@ export default function ChatPage() {
         { role: "assistant", content: response.answer },
       ]);
       setSources(response.sources || []);
+    } catch {
+      toast.error(text.chatError);
     } finally {
       setLoading(false);
     }
@@ -72,7 +86,20 @@ export default function ChatPage() {
       </section>
 
       <section className="chat-main" data-testid="chat-main-panel">
-        <h1 data-testid="chat-title">Chat con Documenti</h1>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h1 data-testid="chat-title">Chat con Documenti</h1>
+          {messages.length > 0 && (
+            <button
+              className="action-button secondary"
+              style={{ padding: "6px 12px", fontSize: "0.8rem" }}
+              onClick={() => setShowClearDialog(true)}
+              data-testid="chat-clear-button"
+            >
+              <Trash2 size={14} style={{ marginRight: "6px" }} />
+              {text.clearChat}
+            </button>
+          )}
+        </div>
         <div className="chat-messages" data-testid="chat-messages-list">
           {messages.length ? (
             messages.map((message, index) => (
@@ -89,6 +116,12 @@ export default function ChatPage() {
                 </p>
               </article>
             ))
+          ) : hasIndexedDocs === false ? (
+            <EmptyState
+              icon={MessageSquare}
+              title={text.noIndexedTitle}
+              description={text.noIndexedDescription}
+            />
           ) : (
             <p className="card-muted" data-testid="chat-empty-state-message">
               Nessuna domanda inviata. Prova: "Quali sono i termini di pagamento nel contratto?"
@@ -97,7 +130,7 @@ export default function ChatPage() {
           {loading && (
             <article className="message assistant" data-testid="chat-thinking-indicator">
               <p className="card-label">SMOT</p>
-              <ThinkingDots />
+              <ThinkingSkeleton />
             </article>
           )}
         </div>
@@ -119,6 +152,20 @@ export default function ChatPage() {
           </button>
         </div>
       </section>
+
+      <ConfirmDialog
+        open={showClearDialog}
+        title={text.clearChat}
+        message={text.clearChatConfirm}
+        confirmLabel={text.clearChat}
+        confirmVariant="danger"
+        onConfirm={() => {
+          setMessages([]);
+          setSources([]);
+          setShowClearDialog(false);
+        }}
+        onCancel={() => setShowClearDialog(false)}
+      />
 
       <aside className="chat-sources" data-testid="chat-sources-panel">
         <h2 data-testid="chat-sources-title">{text.sources}</h2>
