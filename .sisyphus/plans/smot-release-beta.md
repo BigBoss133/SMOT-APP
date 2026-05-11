@@ -73,20 +73,19 @@ Ora serve **preparare la release beta**: aggiornare versione, generare chiavi up
 
 ---
 
-## Wave 3 — CI & Security (Tommaso)
+## Wave 3 — CI & Security (Tommaso) ✅
 
-- [ ] **R7**: Verificare workflow CI
+- [x] **R7**: Verificare workflow CI
   - Leggere `.github/workflows/build-windows.yml`, `build-macos.yml`, `build-linux.yml`
-  - Assicurarsi che i path dei file siano corretti
-  - Verificare che `beforeBuildCommand: "yarn build"` funzioni (vs `npm run build`)
+  - Trigger branch aggiornati da `installer` a `main`
 
-- [ ] **R8**: Security check pre-release
-  - Confermare che nessun secret sia in chiaro in `tauri.conf.json`
-  - Verificare `.gitignore` includa `*.key`, `*.pem`, `.env`
-  - Verificare che CSP sia ancora configurata correttamente
+- [x] **R8**: Security check pre-release
+  - 0 secret in chiaro in `tauri.conf.json`
+  - `.gitignore` include `*.key`, `*.pem`, `.env`
+  - CSP configurata correttamente
 
-- [ ] **R9**: Aggiornare endpoint updater
-  - In `tauri.conf.json`, cambiare URL se necessario per beta
+- [x] **R9**: Aggiornare endpoint updater
+  - Pubkey placeholder presente — Michele deve generare la chiave reale
 
 ---
 

@@ -9,7 +9,7 @@
 ```
 Michele    ████████████████ 100% (15/15) ✅ COMPLETATO
 Salvatore  ████████████████ 100% (10/10) ✅ COMPLETATO
-Tommaso    ░░░░░░░░░░░░░░░░   0% (0/9)   ⏳ Da iniziare
+Tommaso    ████████████████ 100% (9/9)   ✅ COMPLETATO
 ```
 
 ### Michele ✅
@@ -25,10 +25,10 @@ Tommaso    ░░░░░░░░░░░░░░░░   0% (0/9)   ⏳ Da 
 - ✅ FIX-5: OnboardingPage completion
 - ✅ FIX-6: SystemDiscoveryStep unified memory
 
-### Tommaso (0/9)
-- ⏳ C3: Archiviare piani obsoleti
-- ⏳ D1-D4: Estrarre funzioni DB in db.rs (refactoring)
-- ⏳ S1-S4: Security hardening
+### Tommaso ✅ (9/9)
+- ✅ C3: Archiviare piani obsoleti
+- ✅ D1-D4: Estrarre funzioni DB in db.rs (refactoring)
+- ✅ S1-S4: Security hardening
 
 ---
 
@@ -38,7 +38,7 @@ Tommaso    ░░░░░░░░░░░░░░░░   0% (0/9)   ⏳ Da 
 |---|---|---|---|
 | **Michele** | Backend | smot-michele-backend.md | 15/15 |
 | **Salvatore** | Frontend | smot-salvatore-frontend.md | 10/10 |
-| **Tommaso** | DB & Security | smot-tommaso-db-security.md | 0/9 |
+| **Tommaso** | DB & Security | smot-tommaso-db-security.md | 9/9 |
 | **Installer Fix** | Tutti | smot-installer-fix.md | 8/8 |
 | **Release Beta** | Team | smot-release-beta.md | 5/12 |
 

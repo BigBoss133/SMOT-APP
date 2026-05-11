@@ -42,16 +42,16 @@ Source: `smot-desktop/src-tauri/src/` (Rust) + `smot-desktop/src/` (React)
 ## 5. Beta Roadmap
 
 ```
-MERCOLEDÌ — Tommaso (DB + Security)
-  C3: Archiviare piani obsoleti
-  D1-D4: Estrarre funzioni in db.rs
-  S1: Input validation
-  S2: Rate limiting
+MERCOLEDÌ — Tommaso (DB + Security) ✅ COMPLETATO
+  ✅ C3: Archiviare piani obsoleti
+  ✅ D1-D4: Estrarre funzioni in db.rs
+  ✅ S1: Input validation
+  ✅ S2: Rate limiting
 
-GIOVEDÌ — Tommaso (Security) + Refactoring
-  S3: Sanitizzazione filename
-  S4: Config audit
-  Dead code cleanup (JobInput, IndexingFileStatus)
+GIOVEDÌ — Tommaso (Security) + Refactoring ✅ COMPLETATO
+  ✅ S3: Sanitizzazione filename
+  ✅ S4: Config audit
+  ✅ Dead code cleanup (JobInput, IndexingFileStatus)
 
 GIOVEDÌ — Michele (Performance + Fix)
   reqwest::Client singleton in AppState

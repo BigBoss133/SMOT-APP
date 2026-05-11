@@ -19,4 +19,4 @@
 
 ---
 
-> **Prossimo:** Tommaso — DB + Security
+> ✅ **Tommaso — DB + Security completato** | **Prossimo:** Release Beta

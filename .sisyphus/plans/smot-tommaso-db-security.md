@@ -5,7 +5,7 @@
 
 ## TL;DR
 
-> **Tommaso**: 9 task — 0 completati ⏳. Refactoring DB + security hardening.
+> **Tommaso**: 9 task — 9 completati ✅. Refactoring DB + security hardening. **COMPLETATO 11 Maggio 2026.**
 
 ---
 
@@ -40,7 +40,7 @@ Il tuo compito è **estrarre** le query SQL in funzioni `db.rs` dedicate (refact
 
 ## Wave 0 — Prep
 
-- [ ] C3. Archiviare piani obsoleti in `.sisyphus/plans/archive/`
+- [x] C3. Archiviare piani obsoleti in `.sisyphus/plans/archive/`
 
   **QA**: `ls .sisyphus/plans/archive/` → contiene i piani archiviati
 
@@ -57,40 +57,41 @@ fts_documents(content) -- FTS5
 embeddings(id TEXT PK, chunk_id TEXT REFERENCES document_chunks, vector BLOB)
 ```
 
-- [ ] **D1**: `insert_document()` — estrarre da `upload_documents`
-  - Leggere la funzione in `lib.rs`, creare `db::insert_document()`
-  - Sostituire la query inline con chiamata a `db::insert_document()`
+- [x] **D1**: `insert_document()` — estrarre da `upload_documents`
+  - Letto `lib.rs`, creata `db::insert_document()` con 8 parametri + `#[allow(clippy::too_many_arguments)]`
+  - Sostituita la query inline con `db::insert_document()`
 
-- [ ] **D2**: `get_all_documents()` — estrarre da `get_documents`
-  - Leggere la funzione in `lib.rs`, creare `db::get_all_documents()` + struct `Document`
-  - Sostituire la query inline con chiamata a `db::get_all_documents()`
+- [x] **D2**: `get_all_documents()` — estrarre da `get_documents`
+  - Letto `lib.rs`, creata `db::get_all_documents()` + struct `DocumentRow`
+  - Sostituita la query inline con `db::get_all_documents()`
 
-- [ ] **D3**: `update_indexing_status()` — estrarre da `indexing.rs`
-  - Leggere la funzione in `indexing.rs`, creare `db::update_indexing_status()`
-  - Sostituire la query inline con chiamata a `db::update_indexing_status()`
+- [x] **D3**: `update_indexing_status()` — estrarre da `indexing.rs`
+  - Letto `indexing.rs`, creata `db::update_indexing_status()`
+  - Sostituite entrambe le query inline con `crate::db::update_indexing_status()`
 
-- [ ] **D4**: `search_fts5()` — estrarre da `chat_query`
-  - Leggere la funzione in `lib.rs`, creare `db::search_fts5()` + struct `SearchResult`
-  - Sostituire la query inline con chiamata a `db::search_fts5()`
+- [x] **D4**: `search_fts5()` — estrarre da `chat_query`
+  - Letto `lib.rs`, creata `db::search_fts5()` + struct `FtsResult`
+  - Sostituita la query FTS5 inline con `db::search_fts5()`
 
 ---
 
-## Wave 2 — Security
+## Wave 2 — Security ✅
 
-- [ ] **S1**: Input validation su tutti i comandi Tauri
-  - `chat_query`: non vuota, max 1000 char
-  - `upload_documents`: no `../`, filename valido
-  - `get_viewer_page`: doc_id UUID valido
-  - `pull_ollama_model`: solo `[a-zA-Z0-9:._-]`
+- [x] **S1**: Input validation su tutti i comandi Tauri
+  - ✅ `chat_query`: non vuota, max 1000 char
+  - ✅ `upload_documents`: no `../`, filename valido
+  - ✅ `get_viewer_page`: doc_id UUID valido
+  - ✅ `pull_ollama_model`: solo `[a-zA-Z0-9:._-]`
 
-- [ ] **S2**: Rate limiting Ollama — max 5 richieste/sec
-  - In `ollama.rs`, `Arc<Mutex<Vec<Instant>>>`
+- [x] **S2**: Rate limiting Ollama — max 5 richieste/sec
+  - ✅ In `ollama.rs`, `Mutex<Vec<Instant>>` con cleanup + `pub fn check_rate_limit()`
 
-- [ ] **S3**: Sanitizzazione filename upload
-  - Rimuovere `<>:"/\|?*`, troncare 255 char, bloccare `CON, PRN, AUX, NUL`
+- [x] **S3**: Sanitizzazione filename upload
+  - ✅ `sanitize_filename()`: rimuove `<>:"/\|?*`, tronca a 255 char
+  - ✅ `is_reserved_windows_name()`: blocca `CON, PRN, AUX, NUL, COM1-9, LPT1-9`
 
-- [ ] **S4**: Audit secrets in `tauri.conf.json`
-  - `grep -r "sk-\|api_key\|password"` → deve essere vuoto
+- [x] **S4**: Audit secrets in `tauri.conf.json`
+  - ✅ `grep -r "sk-\|api_key\|password"` → vuoto (0 secrets)
 
 ---
 
@@ -104,4 +105,4 @@ grep -r "sk-\|api_key\|password" . --include="*.rs" --include="*.json"  # vuoto
 
 ---
 
-> 📋 Per iniziare: `/start-work smot-tommaso-db-security`
+> 📋 **PIANO COMPLETATO** — 11 Maggio 2026. Tutti i 9 task eseguiti e push-ati su `main`.

@@ -59,8 +59,8 @@ Tutti i 10 stub backend -> reali. Indexing pipeline. Setup onboarding. Apple Sil
 ### Salvatore — ✅ Componenti, ⏳ Fix wizard
 Tutti i 7 task frontend completati. Mancano 3 fix per il wizard full-screen e Apple Silicon display.
 
-### Tommaso — ⏳ DA INIZIARE
-DB functions (estrarre da inline a db.rs). Security hardening (S1-S4).
+### Tommaso — ✅ COMPLETATO
+DB functions estratte da inline a db.rs (D1-D4). Security hardening (S1-S4). Dead code rimosso. CI workflows aggiornati.
 
 ---
 

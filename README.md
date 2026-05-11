@@ -23,7 +23,7 @@ SMOT è un'applicazione **desktop nativa** per l'archiviazione e la consultazion
 |---|---|---|---|
 | **Michele** | BigBoss133 | Backend Rust + Release | ✅ Tutti i task |
 | **Salvatore** | salvograsso10 | Frontend React + UI/UX | ✅ Componenti, ⏳ Fix wizard |
-| **Tommaso** | — | Database + Sicurezza | ⏳ Da iniziare |
+| **Tommaso** | — | Database + Sicurezza | ✅ Tutti i task |
 
 > Tutti usiamo **OpenCode** con Sisyphus.
 
@@ -75,16 +75,19 @@ SMOT è un'applicazione **desktop nativa** per l'archiviazione e la consultazion
 | **FIX-5**: OnboardingPage chiama complete_onboarding | ⏳ |
 | **FIX-6**: SystemDiscoveryStep Apple Silicon | ⏳ |
 
-### ⏳ Tommaso — Database + Sicurezza
+### ✅ Tommaso — Database + Sicurezza
 
 | Task | Stato | Note |
 |------|:-----:|------|
-| C3: Archiviare piani obsoleti | ⏳ | README già aggiornato |
-| D1-D4: Estrarre funzioni in db.rs | ⏳ | SQL già implementato inline |
-| S1: Input validation comandi Tauri | ⏳ | |
-| S2: Rate limiting Ollama | ⏳ | |
-| S3: Sanitizzazione filename upload | ⏳ | |
-| S4: Pulizia dati sensibili config | ⏳ | |
+| C3: Archiviare piani obsoleti | ✅ | Piani in archive/, `.gitignore` fixato |
+| D1: `insert_document()` in db.rs | ✅ | Estratto da `upload_documents` |
+| D2: `get_all_documents()` in db.rs | ✅ | Estratto da `get_documents` |
+| D3: `update_indexing_status()` in db.rs | ✅ | Estratto da `indexing.rs` |
+| D4: `search_fts5()` in db.rs | ✅ | Estratto da `chat_query` |
+| S1: Input validation comandi Tauri | ✅ | Query max 1000, UUID, no `../`, model regex |
+| S2: Rate limiting Ollama | ✅ | Max 5 req/sec, mutex-based |
+| S3: Sanitizzazione filename upload | ✅ | Chars pericolosi, max 255, nomi riservati |
+| S4: Pulizia dati sensibili config | ✅ | 0 secrets, CSP ok, `.gitignore` completo |
 
 ---
 
@@ -95,7 +98,7 @@ SMOT è un'applicazione **desktop nativa** per l'archiviazione e la consultazion
 | **Team Plan** | Tutti | `smot-team-plan.md` | 28 totali |
 | **Michele** | Backend | `smot-michele-backend.md` | ✅ 13/13 ⭐ COMPLETATO |
 | **Salvatore** | Frontend | `smot-salvatore-frontend.md` | ✅ 7/7 + ⏳ 3/3 |
-| **Tommaso** | DB & Sicurezza | `smot-tommaso-db-security.md` | 0/9 |
+| **Tommaso** | DB & Sicurezza | `smot-tommaso-db-security.md` | ✅ 9/9 ⭐ COMPLETATO |
 | **Installer Fix** | Tutti | `smot-installer-fix.md` | 3/8 |
 | **Release Beta** | Team | `smot-release-beta.md` | 5/12 |
 

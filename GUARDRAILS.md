@@ -174,12 +174,12 @@ cargo clippy -- -D warnings    # DEVE passare
 
 Alcuni task dipendono da altri. **Rispetta l'ordine:**
 
-| Task | Dipende da | Bloccato finché |
+| Task | Dipende da | Stato |
 |---|---|---|
-| B2 (get_documents) | D2 (Tommaso) | Tommaso non ha finito `get_all_documents()` |
-| B3 (upload_documents) | D1 (Tommaso) | Tommaso non ha finito `insert_document()` |
-| B6 (chat_query RAG) | D4 (Tommaso) | Tommaso non ha finito `search_fts5()` |
-| B4-B5-B8-B10 (indexing) | D3 (Tommaso) | Tommaso non ha finito `update_indexing_status()` |
+| B2 (get_documents) | D2 (Tommaso) | ✅ Sbloccato — `get_all_documents()` completata |
+| B3 (upload_documents) | D1 (Tommaso) | ✅ Sbloccato — `insert_document()` completata |
+| B6 (chat_query RAG) | D4 (Tommaso) | ✅ Sbloccato — `search_fts5()` completata |
+| B4-B5-B8-B10 (indexing) | D3 (Tommaso) | ✅ Sbloccato — `update_indexing_status()` completata |
 
 **Regola:** Se sei bloccato da un altro, passa al task successivo **non bloccato** nel tuo piano.
 
