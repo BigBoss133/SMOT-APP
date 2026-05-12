@@ -137,20 +137,168 @@ impl<T> Context<T> for Option<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::error::Error;
 
     #[test]
-    fn test_display_messages() {
+    fn test_display_database() {
         let err = AppError::Database("connection failed".to_string());
         assert!(err.to_string().contains("Errore database"));
-        
+        assert!(err.to_string().contains("connection failed"));
+    }
+
+    #[test]
+    fn test_display_network() {
+        let err = AppError::Network("timeout".to_string());
+        assert!(err.to_string().contains("Errore di rete"));
+        assert!(err.to_string().contains("timeout"));
+    }
+
+    #[test]
+    fn test_display_io() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file missing");
+        let err = AppError::Io(io_err);
+        assert!(err.to_string().contains("Errore I/O"));
+    }
+
+    #[test]
+    fn test_display_parse() {
+        let err = AppError::Parse("bad json".to_string());
+        assert!(err.to_string().contains("Errore di parsing"));
+    }
+
+    #[test]
+    fn test_display_config() {
+        let err = AppError::Config("missing key".to_string());
+        assert!(err.to_string().contains("Errore di configurazione"));
+    }
+
+    #[test]
+    fn test_display_not_found() {
         let err = AppError::NotFound("document-123".to_string());
         assert!(err.to_string().contains("Non trovato"));
+    }
+
+    #[test]
+    fn test_display_unauthorized() {
+        let err = AppError::Unauthorized("no token".to_string());
+        assert!(err.to_string().contains("Non autorizzato"));
+    }
+
+    #[test]
+    fn test_display_external() {
+        let err = AppError::External("ollama down".to_string());
+        assert!(err.to_string().contains("Errore esterno"));
+    }
+
+    #[test]
+    fn test_display_validation() {
+        let err = AppError::Validation("empty field".to_string());
+        assert!(err.to_string().contains("Errore di validazione"));
+    }
+
+    #[test]
+    fn test_error_source_io() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "denied");
+        let app_err = AppError::Io(io_err);
+        assert!(app_err.source().is_some());
+    }
+
+    #[test]
+    fn test_error_source_non_io() {
+        let app_err = AppError::Database("err".to_string());
+        assert!(app_err.source().is_none());
     }
 
     #[test]
     fn test_from_sqlite() {
         let sqlite_err = rusqlite::Error::InvalidQuery;
         let app_err: AppError = sqlite_err.into();
-        matches!(app_err, AppError::Database(_));
+        assert!(matches!(app_err, AppError::Database(_)));
+    }
+
+    #[test]
+    fn test_from_io() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::BrokenPipe, "pipe broke");
+        let app_err: AppError = io_err.into();
+        assert!(matches!(app_err, AppError::Io(_)));
+    }
+
+    #[test]
+    fn test_into_string() {
+        let err = AppError::Validation("bad input".to_string());
+        let s: String = err.into();
+        assert!(s.contains("Errore di validazione"));
+        assert!(s.contains("bad input"));
+    }
+
+    #[test]
+    fn test_context_on_ok_result() {
+        let result: Result<i32, rusqlite::Error> = Ok(42);
+        let with_ctx = result.context("loading config");
+        assert!(with_ctx.is_ok());
+        assert_eq!(with_ctx.unwrap(), 42);
+    }
+
+    #[test]
+    fn test_context_on_err_result() {
+        let result: Result<i32, rusqlite::Error> = Err(rusqlite::Error::InvalidQuery);
+        let with_ctx = result.context("loading config");
+        assert!(with_ctx.is_err());
+        let err = with_ctx.unwrap_err();
+        assert!(matches!(err, AppError::Database(_)));
+        assert!(err.to_string().contains("loading config"));
+    }
+
+    #[test]
+    fn test_context_on_some_option() {
+        let opt: Option<i32> = Some(10);
+        let result = opt.context("missing value");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 10);
+    }
+
+    #[test]
+    fn test_context_on_none_option() {
+        let opt: Option<i32> = None;
+        let result = opt.context("missing value");
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), AppError::NotFound(_)));
+    }
+
+    #[test]
+    fn test_app_result_type_alias() {
+        let ok: AppResult<i32> = Ok(1);
+        assert_eq!(ok.unwrap(), 1);
+        let err: AppResult<i32> = Err(AppError::Config("bad".to_string()));
+        assert!(err.is_err());
+    }
+
+    #[test]
+    fn test_from_serde_json_error() {
+        let json_err = serde_json::from_str::<i32>("not a number").unwrap_err();
+        let app_err: AppError = json_err.into();
+        assert!(matches!(app_err, AppError::Parse(_)));
+        assert!(app_err.to_string().contains("Errore di parsing"));
+    }
+
+    #[test]
+    fn test_context_option_none_contains_msg() {
+        let opt: Option<&str> = None;
+        let result: AppResult<&str> = opt.context("resource X");
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("resource X"));
+    }
+
+    #[test]
+    fn test_from_reqwest_error() {
+        // Verify From<reqwest::Error> compiles and converts to Network variant
+        let _: fn(reqwest::Error) -> AppError = |e| e.into();
+        // Also test with a real error if we can produce one
+        let client = reqwest::Client::builder().build().unwrap();
+        let result = client.get("http://[::1]:").build();
+        if let Err(req_err) = result {
+            let app_err: AppError = req_err.into();
+            assert!(matches!(app_err, AppError::Network(_)));
+        }
     }
 }

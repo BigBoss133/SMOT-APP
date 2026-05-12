@@ -1,5 +1,6 @@
 mod auto_config;
 mod db;
+mod error;
 mod indexing;
 mod ollama;
 mod parsers;
@@ -129,6 +130,42 @@ struct ParseDocumentInput {
   file_path: String,
 }
 
+// --- Public validation helpers (testable without Tauri runtime) ---
+
+pub fn validate_upload_file_path(path: &str) -> Result<(), String> {
+  if path.trim().is_empty() {
+    return Err("Filename cannot be empty".to_string());
+  }
+  if path.contains("..") {
+    return Err(format!("Invalid path (path traversal not allowed): {}", path));
+  }
+  let src = std::path::PathBuf::from(path);
+  let stem = src.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+  const RESERVED_WINDOWS_NAMES: &[&str] = &[
+    "CON", "PRN", "AUX", "NUL",
+    "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+    "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+  ];
+  if RESERVED_WINDOWS_NAMES.contains(&stem.to_uppercase().as_str()) {
+    return Err(format!("Invalid filename (reserved Windows name): {}", path));
+  }
+  Ok(())
+}
+
+pub fn validate_chat_query(query: &str) -> Result<(), String> {
+  if query.trim().is_empty() {
+    return Err("Query cannot be empty".to_string());
+  }
+  if query.len() > 1000 {
+    return Err("Query too long (max 1000 characters)".to_string());
+  }
+  Ok(())
+}
+
+pub fn validate_document_id(id: &str) -> Result<(), String> {
+  uuid::Uuid::parse_str(id).map_err(|_| format!("Invalid document ID: {}", id))?;
+  Ok(())
+}
 
 
 #[tauri::command]
@@ -597,4 +634,138 @@ let state = AppState {
     })
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_validate_upload_path_empty() {
+    assert!(validate_upload_file_path("").is_err());
+    assert!(validate_upload_file_path("   ").is_err());
+  }
+
+  #[test]
+  fn test_validate_upload_path_traversal() {
+    assert!(validate_upload_file_path("../etc/passwd").is_err());
+    assert!(validate_upload_file_path("docs/../../secret").is_err());
+  }
+
+  #[test]
+  fn test_validate_upload_path_reserved_name_con() {
+    assert!(validate_upload_file_path("/tmp/CON.txt").is_err());
+  }
+
+  #[test]
+  fn test_validate_upload_path_reserved_name_aux() {
+    assert!(validate_upload_file_path("/tmp/AUX.pdf").is_err());
+  }
+
+  #[test]
+  fn test_validate_upload_path_reserved_name_lpt1() {
+    assert!(validate_upload_file_path("/tmp/LPT1.docx").is_err());
+  }
+
+  #[test]
+  fn test_validate_upload_path_valid() {
+    assert!(validate_upload_file_path("/home/user/document.pdf").is_ok());
+    assert!(validate_upload_file_path("report.xlsx").is_ok());
+  }
+
+  #[test]
+  fn test_validate_chat_query_empty() {
+    assert!(validate_chat_query("").is_err());
+    assert!(validate_chat_query("   ").is_err());
+  }
+
+  #[test]
+  fn test_validate_chat_query_too_long() {
+    let long_query = "a".repeat(1001);
+    assert!(validate_chat_query(&long_query).is_err());
+  }
+
+  #[test]
+  fn test_validate_chat_query_at_limit() {
+    let exact_query = "a".repeat(1000);
+    assert!(validate_chat_query(&exact_query).is_ok());
+  }
+
+  #[test]
+  fn test_validate_chat_query_valid() {
+    assert!(validate_chat_query("What is SMOT?").is_ok());
+  }
+
+  #[test]
+  fn test_validate_document_id_invalid_uuid() {
+    assert!(validate_document_id("not-a-uuid").is_err());
+    assert!(validate_document_id("").is_err());
+    assert!(validate_document_id("12345").is_err());
+  }
+
+  #[test]
+  fn test_validate_document_id_valid_uuid() {
+    let id = uuid::Uuid::new_v4().to_string();
+    assert!(validate_document_id(&id).is_ok());
+  }
+
+  #[test]
+  fn test_validate_document_id_malformed_uuid() {
+    assert!(validate_document_id("550e8400-e29b-41d4-a716-44665544000").is_err());
+  }
+
+  // --- StartIndexingInput document_ids ---
+
+  #[test]
+  fn test_start_indexing_empty_ids() {
+    let input = StartIndexingInput { document_ids: vec![] };
+    assert!(input.document_ids.is_empty());
+  }
+
+  #[test]
+  fn test_start_indexing_non_empty_ids() {
+    let input = StartIndexingInput { document_ids: vec!["id1".to_string(), "id2".to_string()] };
+    assert!(!input.document_ids.is_empty());
+    assert_eq!(input.document_ids.len(), 2);
+  }
+
+  // --- Struct creation tests ---
+
+  #[test]
+  fn test_viewer_document_creation() {
+    let doc = ViewerDocument {
+      id: "doc-1".to_string(),
+      name: "test.pdf".to_string(),
+      file_type: "PDF".to_string(),
+      category: "finance".to_string(),
+      indexed: true,
+      size_kb: 1024,
+      pages: 5,
+    };
+    assert_eq!(doc.id, "doc-1");
+    assert_eq!(doc.name, "test.pdf");
+    assert_eq!(doc.file_type, "PDF");
+    assert!(doc.indexed);
+    assert_eq!(doc.size_kb, 1024);
+    assert_eq!(doc.pages, 5);
+  }
+
+  #[test]
+  fn test_system_status_creation() {
+    let status = SystemStatus {
+      offline_secure: true,
+      ram_used_gb: 8.5,
+      ram_total_gb: 16.0,
+      cpu_percent: 45,
+      gpu_percent: 0,
+      documents_total: 10,
+      documents_indexed: 7,
+      storage_total_gb: 512,
+      active_model: "llama3.1:8b".to_string(),
+    };
+    assert!(status.offline_secure);
+    assert_eq!(status.ram_used_gb, 8.5);
+    assert_eq!(status.documents_total, 10);
+    assert_eq!(status.documents_indexed, 7);
+  }
 }

@@ -71,7 +71,7 @@ struct EmbeddingsResponse {
     embedding: Vec<f32>,
 }
 
-fn chunk_text(text: &str) -> Vec<String> {
+pub fn chunk_text(text: &str) -> Vec<String> {
     if text.len() <= CHUNK_SIZE_CHARS {
         return vec![text.to_string()];
     }
@@ -134,7 +134,7 @@ fn embedding_to_blob(embedding: &[f32]) -> Vec<u8> {
     embedding.iter().flat_map(|f| f.to_le_bytes()).collect()
 }
 
-fn query_documents(
+pub fn query_documents(
     conn: &Connection,
     document_ids: &Option<Vec<String>>,
 ) -> Result<Vec<(String, String, String)>, String> {
@@ -407,4 +407,211 @@ pub async fn start_indexing(
         total_chunks: 0,
         eta_seconds: 0,
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rusqlite::Connection;
+
+    fn setup_test_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "PRAGMA journal_mode = WAL;
+             PRAGMA foreign_keys = ON;
+             CREATE TABLE IF NOT EXISTS documents (
+               id TEXT PRIMARY KEY,
+               name TEXT NOT NULL,
+               path TEXT NOT NULL,
+               category TEXT,
+               file_type TEXT,
+               size_bytes INTEGER,
+               indexed INTEGER DEFAULT 0,
+               created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+             );
+             CREATE TABLE IF NOT EXISTS document_chunks (
+               id TEXT PRIMARY KEY,
+               document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+               content TEXT NOT NULL,
+               chunk_index INTEGER NOT NULL,
+               created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+             );
+             CREATE VIRTUAL TABLE IF NOT EXISTS fts_documents USING fts5(
+               content,
+               content_rowid = rowid,
+               tokenize = 'porter'
+             );
+             CREATE TABLE IF NOT EXISTS embeddings (
+               id TEXT PRIMARY KEY,
+               chunk_id TEXT NOT NULL REFERENCES document_chunks(id) ON DELETE CASCADE,
+               vector BLOB,
+               created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+             );"
+        ).unwrap();
+        conn
+    }
+
+    fn insert_test_doc(conn: &Connection, id: &str, name: &str, path: &str, indexed: bool) {
+        conn.execute(
+            "INSERT INTO documents (id, name, path, category, file_type, size_bytes, indexed, created_at) VALUES (?1, ?2, ?3, 'test', 'TXT', 100, ?4, '2025-01-01T00:00:00Z')",
+            rusqlite::params![id, name, path, indexed as i32],
+        ).unwrap();
+    }
+
+    #[test]
+    fn test_chunk_text_short() {
+        let text = "Short text";
+        let chunks = chunk_text(text);
+        assert_eq!(chunks.len(), 1);
+        assert_eq!(chunks[0], "Short text");
+    }
+
+    #[test]
+    fn test_chunk_text_empty() {
+        let chunks = chunk_text("");
+        assert!(chunks.is_empty() || chunks.iter().all(|c| c.trim().is_empty()));
+    }
+
+    #[test]
+    fn test_chunk_text_long_splits() {
+        let text = "A".repeat(5000);
+        let chunks = chunk_text(&text);
+        assert!(chunks.len() > 1);
+        for chunk in &chunks {
+            assert!(!chunk.trim().is_empty());
+        }
+    }
+
+    #[test]
+    fn test_chunk_text_preserves_content() {
+        let text = "Hello world. This is a test. With multiple sentences. And more text. To fill up space. And verify chunking works correctly. The end.";
+        let chunks = chunk_text(text);
+        let reassembled: String = chunks.join("");
+        assert!(reassembled.contains("Hello world"));
+        assert!(reassembled.contains("The end"));
+    }
+
+    #[test]
+    fn test_chunk_text_at_boundary() {
+        let text = "A".repeat(CHUNK_SIZE_CHARS);
+        let chunks = chunk_text(&text);
+        assert_eq!(chunks.len(), 1);
+    }
+
+    #[test]
+    fn test_query_documents_all_unindexed() {
+        let conn = setup_test_db();
+        insert_test_doc(&conn, "doc-1", "file1.txt", "/tmp/file1.txt", false);
+        insert_test_doc(&conn, "doc-2", "file2.txt", "/tmp/file2.txt", false);
+
+        let result = query_documents(&conn, &None);
+        assert!(result.is_ok());
+        let docs = result.unwrap();
+        assert_eq!(docs.len(), 2);
+    }
+
+    #[test]
+    fn test_query_documents_skips_indexed() {
+        let conn = setup_test_db();
+        insert_test_doc(&conn, "doc-1", "file1.txt", "/tmp/file1.txt", true);
+        insert_test_doc(&conn, "doc-2", "file2.txt", "/tmp/file2.txt", false);
+
+        let result = query_documents(&conn, &None);
+        assert!(result.is_ok());
+        let docs = result.unwrap();
+        assert_eq!(docs.len(), 1);
+        assert_eq!(docs[0].0, "doc-2");
+    }
+
+    #[test]
+    fn test_query_documents_with_specific_ids() {
+        let conn = setup_test_db();
+        insert_test_doc(&conn, "doc-1", "file1.txt", "/tmp/file1.txt", false);
+        insert_test_doc(&conn, "doc-2", "file2.txt", "/tmp/file2.txt", false);
+        insert_test_doc(&conn, "doc-3", "file3.txt", "/tmp/file3.txt", false);
+
+        let result = query_documents(&conn, &Some(vec!["doc-1".to_string(), "doc-3".to_string()]));
+        assert!(result.is_ok());
+        let docs = result.unwrap();
+        assert_eq!(docs.len(), 2);
+    }
+
+    #[test]
+    fn test_query_documents_empty_db() {
+        let conn = setup_test_db();
+        let result = query_documents(&conn, &None);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 0);
+    }
+
+    #[test]
+    fn test_query_documents_nonexistent_id() {
+        let conn = setup_test_db();
+        insert_test_doc(&conn, "doc-1", "file1.txt", "/tmp/file1.txt", false);
+
+        let result = query_documents(&conn, &Some(vec!["nonexistent".to_string()]));
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 0);
+    }
+
+    #[test]
+    fn test_indexing_controller_default() {
+        let ctrl = IndexingController::new();
+        let state = ctrl.state.lock().unwrap();
+        assert_eq!(state.status, "idle");
+        assert_eq!(state.total_documents, 0);
+        assert_eq!(state.completed_documents, 0);
+        assert!(state.error.is_none());
+    }
+
+    #[test]
+    fn test_indexing_controller_flags() {
+        let ctrl = IndexingController::new();
+        assert!(!ctrl.pause_flag.load(Ordering::Relaxed));
+        assert!(!ctrl.cancel_flag.load(Ordering::Relaxed));
+        ctrl.pause_flag.store(true, Ordering::Relaxed);
+        assert!(ctrl.pause_flag.load(Ordering::Relaxed));
+    }
+
+    #[test]
+    fn test_embedding_to_blob() {
+        let embedding = vec![1.0f32, 2.0, 3.0];
+        let blob = embedding_to_blob(&embedding);
+        assert_eq!(blob.len(), 12);
+        // Verify round-trip
+        let first = f32::from_le_bytes([blob[0], blob[1], blob[2], blob[3]]);
+        assert_eq!(first, 1.0f32);
+    }
+
+    #[test]
+    fn test_indexing_state_default() {
+        let state = IndexingState::default();
+        assert_eq!(state.status, "idle");
+        assert_eq!(state.total_documents, 0);
+        assert_eq!(state.completed_documents, 0);
+        assert_eq!(state.current_document, "");
+        assert_eq!(state.current_chunk, 0);
+        assert_eq!(state.total_chunks, 0);
+        assert_eq!(state.eta_seconds, 0);
+        assert!(state.error.is_none());
+    }
+
+    #[test]
+    fn test_indexing_controller_cancel_flag_toggle() {
+        let ctrl = IndexingController::new();
+        assert!(!ctrl.cancel_flag.load(Ordering::Relaxed));
+        ctrl.cancel_flag.store(true, Ordering::Relaxed);
+        assert!(ctrl.cancel_flag.load(Ordering::Relaxed));
+        ctrl.cancel_flag.store(false, Ordering::Relaxed);
+        assert!(!ctrl.cancel_flag.load(Ordering::Relaxed));
+    }
+
+    #[test]
+    fn test_chunk_text_respects_paragraph_breaks() {
+        let para1 = "a".repeat(1500);
+        let para2 = "b".repeat(1500);
+        let text = format!("{}\n\n{}", para1, para2);
+        let chunks = chunk_text(&text);
+        assert!(chunks.len() >= 2, "should split at paragraph boundaries");
+    }
 }
