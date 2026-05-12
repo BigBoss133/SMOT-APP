@@ -1,6 +1,6 @@
 # 🔍 SMOT-APP — Analisi Completa Repository
 
-> **Data:** 11 Maggio 2026 22:00 | **Repo:** BigBoss133/SMOT-APP
+> **Data:** 12 Maggio 2026 12:00 | **Repo:** BigBoss133/SMOT-APP
 
 ---
 
@@ -8,7 +8,7 @@
 
 | Branch | Stato | Ultimo Commit |
 |--------|:-----:|---------------|
-| `main` | 🟢 Attivo | `ca273ae` — docs: installer/onboarding analysis + fix plan |
+| `main` | 🟢 Attivo | `2c4a354` — fix: Michele backend fixes (pubkey, CI macOS, Rust fixes, 62 tests) |
 | `release/v0.1.0-beta` | 🟢 Attivo | `83d5ea3` — fix: installer/onboarding bugs |
 | `docs/install-guides` | 🟢 Attivo | `2fad4a6` — docs: OS-specific install guides |
 | `backup/pre-cleanup` | 📌 Tag | Backup pre-pulizia |
@@ -28,7 +28,9 @@
 ### Stato Attuale
 ✅ **Tutti i 10 comandi Tauri sono implementazioni reali.**
 ✅ **Frontend polish completato (7/7 task).**
-⏳ **Fix installer/onboarding in corso (3/8 task).**
+✅ **Fix backend Rust completati (pubkey, CI macOS, reqwest singleton, error handling, Ollama caching, Windows sanitize, document_ids).**
+✅ **62 test Rust scritti e passanti (parsers: 7, error: 21, lib: 13, indexing: 20).**
+⏳ **Fix frontend wizard/onboarding (3 task, Salvatore).**
 
 ### File Chiave
 
@@ -42,6 +44,7 @@
 | `smot-desktop/src-tauri/src/setup.rs` | Startup + onboarding + config | ✅ Fixato (83d5ea3) |
 | `smot-desktop/src-tauri/src/system_probe.rs` | GPU/CPU/RAM detection | ✅ Apple Silicon |
 | `smot-desktop/src-tauri/src/auto_config.rs` | Tier detection | ✅ Unified memory |
+| `smot-desktop/src-tauri/src/error.rs` | Error handling | ✅ 21 test |
 | `smot-desktop/src/components/ErrorBoundary.tsx` | ErrorBoundary | ✅ Salvatore |
 | `smot-desktop/src/components/Skeleton.tsx` | Loading skeletons | ✅ Salvatore |
 | `smot-desktop/src/components/EmptyState.tsx` | Empty states | ✅ Salvatore |
@@ -53,8 +56,11 @@
 
 ## 📊 Progresso Generale
 
-### Michele — ✅ COMPLETATO
+### Michele — ✅ COMPLETATO (fix + test)
 Tutti i 10 stub backend -> reali. Indexing pipeline. Setup onboarding. Apple Silicon detection. Branch release creato.
+Fix: pubkey updater, CI macOS targets, reqwest::Client singleton, Connection::open error handling, Ollama caching 5s TTL, timeout 2s→10s, Windows filename sanitization, document_ids filtering.
+Rimossa configurazione modello locale (ai_enabled) dal Config.
+**62 test Rust scritti**: parsers(7), error(21), lib(13), indexing(20).
 
 ### Salvatore — ✅ Componenti, ⏳ Fix wizard
 Tutti i 7 task frontend completati. Mancano 3 fix per il wizard full-screen e Apple Silicon display.
@@ -84,9 +90,10 @@ DB functions estratte da inline a db.rs (D1-D4). Security hardening (S1-S4). Dea
 | Layer | Comando | Risultato |
 |-------|---------|-----------|
 | Rust | `cargo build` | ✅ 0 errori |
+| Rust | `cargo test` | ✅ 62/62 pass |
 | TypeScript | `npx tsc --noEmit` | ✅ 0 errori |
 | Frontend | `npm run build` | ✅ 321 KB JS |
 
 ---
 
-*Analisi aggiornata 11 Maggio 2026 — dopo ogni sessione di lavoro*
+*Analisi aggiornata 12 Maggio 2026 — dopo merge feat/michele-fix-may12 in main*

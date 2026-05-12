@@ -1,6 +1,6 @@
 # SMOT — Smart Archive Desktop
 
-> Archivio documentale intelligente 100% offline con IA locale opzionale
+> Archivio documentale intelligente 100% offline con IA locale opzionale | v0.1.0-beta
 
 ---
 
@@ -23,29 +23,36 @@ SMOT è un'applicazione **desktop nativa** per l'archiviazione e la consultazion
 
 | Sviluppatore | GitHub | Ruolo | Task |
 |---|---|---|---|
-| **Michele** | BigBoss133 | Backend Rust + Release + Landing API | ✅ 21/21 |
+| **Michele** | BigBoss133 | Backend Rust + Release + Landing API + Test | ✅ 28/28 |
 | **Salvatore** | salvograsso10 | Frontend React + UI/UX + Landing Page | ✅ 10/10 |
 | **Tommaso** | — | Database + Sicurezza + CI | ✅ 9/9 |
 
-> 🎉 **34/34 task completati** — Pronti per la beta release
+> 🎉 **47/47 task completati** — Pronti per la beta release
 
 ---
 
 ## 📊 Stato Attuale
 
 ```
-MICHELE    ████████████████ 100%  Backend Rust: 10 comandi reali + indexing + setup + landing API
+MICHELE    ████████████████ 100%  Backend Rust: fix pubkey, CI macOS, reqwest singleton, error handling, 62 test
 SALVATORE  ████████████████ 100%  Frontend React: 7 componenti + 3 fix wizard + landing page
 TOMMASO    ████████████████ 100%  DB refactoring + Security (S1-S4) + CI fix + dead code
 ```
 
-### Michele — Backend + Landing API
+### Michele — Backend + Landing API + Test
 - 10 comandi Tauri stub → reali (sysinfo, SQLite, FTS5, Ollama RAG)
 - Modulo indexing.rs (395 righe: chunking → embedding → FTS5)
 - Setup onboarding con check config + complete_onboarding
 - Apple Silicon detection (memoria unificata, ram_available_gb)
-- Branch release/v0.1.0-beta + chiave updater
+- Branch release/v0.1.0-beta + chiave updater generata
 - Landing page backend API (Express + Stripe + JWT + license management)
+- CI macOS fix: rustup target add per Intel + Apple Silicon
+- reqwest::Client singleton (ridotto da 4 a 1 istanza)
+- Connection::open().expect() → error handling graceful
+- Ollama timeout 2s→10s + caching 5s TTL
+- Sanitizzazione filename Windows (CON/PRN/AUX/NUL)
+- **62 test Rust** (parsers: 7, error: 21, lib: 13, indexing: 20)
+- Rimossa configurazione modello locale dal primo avvio
 
 ### Salvatore — Frontend
 - ErrorBoundary con fallback UI
@@ -88,6 +95,7 @@ TOMMASO    ████████████████ 100%  DB refactoring
 | Comando | Risultato |
 |---------|:--------:|
 | `cargo build` | ✅ 0 errori |
+| `cargo test` | ✅ 62/62 test passano |
 | `npx tsc --noEmit` | ✅ 0 errori |
 | `npm run build` | ✅ 321 KB JS, 16 KB CSS |
 
@@ -117,6 +125,7 @@ Tutti in `.sisyphus/plans/` — eseguibili con `/start-work`:
 | `smot-installer-checklist.md` | UX Polish | 11 task |
 | `smot-landing-license.md` | Landing + Licenze | 13 task |
 | `smot-release-beta.md` | Release | 7/12 ⏳ |
+| `smot-repo-audit.md` | Audit + Fix Plan | 15/15 ✅ |
 
 ---
 
