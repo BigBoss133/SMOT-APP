@@ -1,10 +1,14 @@
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use std::time::Instant;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, State};
+use once_cell::sync::Lazy;
 
 static RATE_LIMITS: Mutex<Vec<Instant>> = Mutex::new(Vec::new());
 const MAX_REQUESTS_PER_SEC: usize = 5;
+
+static OLLAMA_CACHE: Lazy<Mutex<Option<(OllamaStatus, Instant)>>> =
+    Lazy::new(|| Mutex::new(None));
 
 pub fn check_rate_limit() -> Result<(), String> {
     let now = Instant::now();
@@ -40,9 +44,17 @@ pub struct DownloadProgress {
     pub error: Option<String>,
 }
 
-pub async fn check_ollama_status() -> OllamaStatus {
-    let client = reqwest::Client::new();
-    match client.get("http://localhost:11434/api/version").timeout(std::time::Duration::from_secs(2)).send().await {
+pub async fn check_ollama_status(client: &reqwest::Client) -> OllamaStatus {
+    // Cache check
+    if let Ok(cache) = OLLAMA_CACHE.lock() {
+        if let Some((ref status, ref time)) = *cache {
+            if time.elapsed().as_secs() < 5 {
+                return status.clone();
+            }
+        }
+    }
+
+    let result = match client.get("http://localhost:11434/api/version").timeout(std::time::Duration::from_secs(10)).send().await {
         Ok(resp) => {
             let version = resp.json::<serde_json::Value>().await.ok().and_then(|v| v["version"].as_str().map(String::from));
             let models = match client.get("http://localhost:11434/api/tags").send().await {
@@ -55,16 +67,23 @@ pub async fn check_ollama_status() -> OllamaStatus {
             OllamaStatus { installed: true, version, running: true, models, error: None }
         }
         Err(_) => OllamaStatus { installed: false, version: None, running: false, models: vec![], error: Some("Ollama non raggiungibile".into()) }
+    };
+
+    // Update cache
+    if let Ok(mut cache) = OLLAMA_CACHE.lock() {
+        *cache = Some((result.clone(), Instant::now()));
     }
+
+    result
 }
 
 #[tauri::command]
-pub async fn get_ollama_status() -> Result<OllamaStatus, String> {
-    Ok(check_ollama_status().await)
+pub async fn get_ollama_status(state: State<'_, crate::AppState>) -> Result<OllamaStatus, String> {
+    Ok(check_ollama_status(&state.client).await)
 }
 
 #[tauri::command]
-pub async fn pull_ollama_model(model: String, app: AppHandle) -> Result<(), String> {
+pub async fn pull_ollama_model(model: String, app: AppHandle, state: State<'_, crate::AppState>) -> Result<(), String> {
     if model.trim().is_empty() {
         return Err("Model name cannot be empty".to_string());
     }
@@ -72,7 +91,7 @@ pub async fn pull_ollama_model(model: String, app: AppHandle) -> Result<(), Stri
         return Err(format!("Invalid model name: {}", model));
     }
 
-    let client = reqwest::Client::new();
+    let client = state.client.clone();
     let resp = client.post("http://localhost:11434/api/pull")
         .json(&serde_json::json!({"name": &model, "stream": true}))
         .send().await.map_err(|e| e.to_string())?;

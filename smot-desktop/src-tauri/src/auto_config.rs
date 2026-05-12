@@ -39,6 +39,7 @@ pub fn determine_tier(profile: &SystemProfile) -> Tier {
 }
 
 impl Tier {
+    #[allow(dead_code)]
     pub fn supports_ai(&self) -> bool {
         matches!(self, Tier::Premium | Tier::Standard)
     }

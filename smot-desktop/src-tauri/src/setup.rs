@@ -13,8 +13,7 @@ pub struct Config {
     pub first_launch: String,
     pub language: String,
     pub license: Option<String>,
-    pub ai_enabled: bool,
-}
+    }
 
 #[allow(dead_code)]
 pub fn config_path(app: &tauri::App) -> Result<PathBuf, String> {
@@ -73,8 +72,6 @@ pub fn on_app_startup(app: &mut tauri::App) {
     let profile = system_probe::probe_system();
     let tier = auto_config::determine_tier(&profile);
 
-    let ai_enabled = tier.supports_ai();
-
     let config = Config {
         tier: tier.clone(),
         profile: profile.clone(),
@@ -82,7 +79,6 @@ pub fn on_app_startup(app: &mut tauri::App) {
         first_launch: chrono::Local::now().to_rfc3339(),
         language: "it".to_string(),
         license: None,
-        ai_enabled,
     };
 
     save_config(&config_path, &config);

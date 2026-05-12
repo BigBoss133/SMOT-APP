@@ -134,12 +134,46 @@ fn embedding_to_blob(embedding: &[f32]) -> Vec<u8> {
     embedding.iter().flat_map(|f| f.to_le_bytes()).collect()
 }
 
+fn query_documents(
+    conn: &Connection,
+    document_ids: &Option<Vec<String>>,
+) -> Result<Vec<(String, String, String)>, String> {
+    let (sql, params): (String, Vec<Box<dyn rusqlite::types::ToSql>>) = match document_ids {
+        Some(ids) if !ids.is_empty() => {
+            let placeholders: Vec<String> = ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
+            let sql = format!(
+                "SELECT id, name, path FROM documents WHERE indexed = 0 AND id IN ({})",
+                placeholders.join(", ")
+            );
+            let params: Vec<Box<dyn rusqlite::types::ToSql>> = ids.iter().map(|s| Box::new(s.clone()) as Box<dyn rusqlite::types::ToSql>).collect();
+            (sql, params)
+        }
+        _ => (
+            "SELECT id, name, path FROM documents WHERE indexed = 0".to_string(),
+            vec![],
+        ),
+    };
+
+    let mut stmt = conn.prepare(&sql).map_err(|e| format!("DB query error: {}", e))?;
+    let rows = stmt
+        .query_map(rusqlite::params_from_iter(params.iter().map(|p| p.as_ref())), |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+            ))
+        })
+        .map_err(|e| format!("DB query error: {}", e))?;
+    Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
 pub async fn start_indexing(
     app_handle: AppHandle,
     controller: Arc<IndexingController>,
     db: Arc<Mutex<Connection>>,
+    client: reqwest::Client,
+    document_ids: Option<Vec<String>>,
 ) {
-    let client = reqwest::Client::new();
     let start_time = std::time::Instant::now();
 
     let documents: Vec<(String, String, String)> = {
@@ -152,34 +186,15 @@ pub async fn start_indexing(
                 return;
             }
         };
-        let stmt = conn.prepare(
-            "SELECT id, name, path FROM documents WHERE indexed = 0"
-        );
-        let mut stmt = match stmt {
-            Ok(s) => s,
+        match query_documents(&conn, &document_ids) {
+            Ok(docs) => docs,
             Err(e) => {
                 let mut st = controller.state.lock().unwrap_or_else(|e| e.into_inner());
                 st.status = "error".to_string();
-                st.error = Some(format!("DB query error: {}", e));
+                st.error = Some(e);
                 return;
             }
-        };
-        let rows: Vec<(String, String, String)> = match stmt.query_map([], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, String>(2)?,
-            ))
-        }) {
-            Ok(mapped) => mapped.filter_map(|r| r.ok()).collect(),
-            Err(e) => {
-                let mut st = controller.state.lock().unwrap_or_else(|e| e.into_inner());
-                st.status = "error".to_string();
-                st.error = Some(format!("DB query error: {}", e));
-                return;
-            }
-        };
-        rows
+        }
     };
 
     let total = documents.len() as u32;
