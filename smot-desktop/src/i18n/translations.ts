@@ -1,3 +1,11 @@
+export const licenseStatus = {
+  valid: "valid",
+  grace: "grace",
+  blocked: "blocked",
+} as const;
+
+export type LicenseStatusType = (typeof licenseStatus)[keyof typeof licenseStatus];
+
 export const translations = {
   it: {
     appName: "SMOT Smart Archive",
@@ -62,6 +70,9 @@ export const translations = {
       stepModel: "Modello IA",
       stepDoc: "Documento",
       stepDone: "Fine",
+      skipAll: "Salta tutto",
+      back: "Indietro",
+      next: "Avanti",
       scanTitle: "Analisi del tuo PC in corso...",
       scanCpu: "Processore",
       scanRam: "RAM",
@@ -85,6 +96,17 @@ export const translations = {
       completionTitle: "Tutto pronto!",
       goToDashboard: "Vai alla Dashboard",
     },
+    license: {
+      blockedTitle: "Licenza scaduta",
+      blockedDescription: "Inserisci una nuova chiave per continuare a usare SMOT.",
+      enterKey: "Inserisci chiave",
+      validate: "Valida",
+      graceWarning: "La tua licenza scade oggi. Rinnova per non perdere l'accesso.",
+      renew: "Rinnova ora",
+      invalidKey: "Chiave non valida. Verifica e riprova.",
+    },
+    welcomeOnboarding: "Benvenuto in SMOT! Il tuo archivio è pronto.",
+    onboardingError: "Errore durante la scansione del sistema. Verifica le impostazioni.",
   },
   en: {
     appName: "SMOT Smart Archive",
@@ -148,6 +170,9 @@ export const translations = {
       stepModel: "AI Model",
       stepDoc: "Document",
       stepDone: "Done",
+      skipAll: "Skip all",
+      back: "Back",
+      next: "Next",
       scanTitle: "Analyzing your PC...",
       scanCpu: "Processor",
       scanRam: "RAM",
@@ -171,6 +196,17 @@ export const translations = {
       completionTitle: "All set!",
       goToDashboard: "Go to Dashboard",
     },
+    license: {
+      blockedTitle: "License Expired",
+      blockedDescription: "Enter a new key to continue using SMOT.",
+      enterKey: "Enter key",
+      validate: "Validate",
+      graceWarning: "Your license expires today. Renew to keep access.",
+      renew: "Renew now",
+      invalidKey: "Invalid key. Check and try again.",
+    },
+    welcomeOnboarding: "Welcome to SMOT! Your archive is ready.",
+    onboardingError: "Error during system scan. Check your settings.",
   },
 } as const;
 

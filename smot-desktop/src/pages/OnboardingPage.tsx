@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { listen } from "@tauri-apps/api/event";
+import { ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
 import { WizardProgress } from "../components/onboarding/WizardProgress";
 import { SystemDiscoveryStep } from "../components/onboarding/SystemDiscoveryStep";
 import { LicenseStep } from "../components/onboarding/LicenseStep";
@@ -10,6 +11,7 @@ import { CompletionStep } from "../components/onboarding/CompletionStep";
 import { invoke } from "@tauri-apps/api/core";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
+import { useToast } from "../context/ToastContext";
 
 interface SystemProfile {
   cpu_cores: number;
@@ -24,6 +26,7 @@ interface SystemProfile {
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const { success, error: showError } = useToast();
   const t = translations[language].wizard;
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -33,15 +36,29 @@ export default function OnboardingPage() {
   const [modelStatus, setModelStatus] = useState<string>("skipped");
   const [firstDoc, setFirstDoc] = useState<File | null>(null);
 
+  const handleSystemProbeError = useCallback(() => {
+    showError(translations[language].onboardingError);
+    setSystemProfile(null);
+    setTier("Essential");
+  }, [showError, language]);
+
   useEffect(() => {
     let unlisten: (() => void) | undefined;
 
     const setupListener = async () => {
-      unlisten = await listen("first-launch", (event) => {
-        const payload = event.payload as SystemProfile & { tier: string };
-        setSystemProfile(payload);
-        setTier(payload.tier);
-      });
+      try {
+        unlisten = await listen("first-launch", (event) => {
+          const payload = event.payload as SystemProfile & { tier: string };
+          if (payload && payload.cpu_cores) {
+            setSystemProfile(payload);
+            setTier(payload.tier);
+          } else {
+            handleSystemProbeError();
+          }
+        });
+      } catch {
+        handleSystemProbeError();
+      }
     };
 
     void setupListener();
@@ -51,7 +68,7 @@ export default function OnboardingPage() {
         unlisten();
       }
     };
-  }, []);
+  }, [handleSystemProbeError]);
 
   const handleLicenseSelect = useCallback((choice: "trial" | "license", key?: string) => {
     setLicenseChoice({ type: choice, key });
@@ -67,10 +84,26 @@ export default function OnboardingPage() {
     setFirstDoc(file);
   }, []);
 
-  const handleFinish = useCallback(async () => {
-    await invoke("complete_onboarding");
+  const handleSkipAll = useCallback(async () => {
+    try {
+      await invoke("complete_onboarding");
+    } catch {
+      // ignore
+    }
+    success(translations[language].welcomeOnboarding);
     navigate("/");
-  }, [navigate]);
+  }, [navigate, success, language]);
+
+  const handleFinish = useCallback(async () => {
+    try {
+      await invoke("complete_onboarding");
+      success(translations[language].welcomeOnboarding);
+    } catch {
+      // Even if complete_onboarding fails, navigate to dashboard
+      success(translations[language].welcomeOnboarding);
+    }
+    navigate("/");
+  }, [navigate, success, language]);
 
   const stepLabels = [t.stepScan, t.stepLicense, t.stepModel, t.stepDoc, t.stepDone];
 
@@ -199,9 +232,14 @@ export default function OnboardingPage() {
           <div style={styles.navigation}>
             {currentStep > 0 && (
               <button onClick={handleBack} style={styles.backButton} type="button">
-                Indietro
+                <ChevronLeft size={18} />
+                {t.back}
               </button>
             )}
+            <button onClick={handleSkipAll} style={styles.skipButton} type="button">
+              <SkipForward size={16} />
+              {t.skipAll}
+            </button>
             {currentStep !== 1 && currentStep !== 2 && (
               <button
                 onClick={handleNext}
@@ -212,7 +250,8 @@ export default function OnboardingPage() {
                 }}
                 type="button"
               >
-                Avanti
+                {t.next}
+                <ChevronRight size={18} />
               </button>
             )}
           </div>
@@ -235,7 +274,7 @@ export default function OnboardingPage() {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+  const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
     background: "radial-gradient(ellipse at top, #1e3a8a 0%, #0a1a3b 100%)",
@@ -292,5 +331,20 @@ const styles: Record<string, React.CSSProperties> = {
   buttonDisabled: {
     opacity: 0.5,
     cursor: "not-allowed",
+  },
+  skipButton: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "12px 20px",
+    background: "transparent",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: "10px",
+    color: "rgba(255,255,255,0.5)",
+    fontSize: "0.85rem",
+    fontWeight: 500,
+    cursor: "pointer",
+    transition: "all 200ms ease",
+    marginLeft: "auto",
   },
 };

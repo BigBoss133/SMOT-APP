@@ -11,7 +11,7 @@ use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use sysinfo::{Disks, System};
-use tauri::Manager;
+use tauri::{Manager, menu::{MenuBuilder, MenuItemBuilder}, Runtime, tray::{TrayIconBuilder, MouseButton, MouseButtonState}};
 
 pub struct AppState {
   active_mode: Mutex<String>,
@@ -578,6 +578,64 @@ fn parse_document_text(payload: ParseDocumentInput) -> Result<parsers::ParsedDoc
   parsers::extract_document_text(payload.file_path.into())
 }
 
+// --- Tray & License commands ---
+
+#[tauri::command]
+async fn minimize_to_tray(app_handle: tauri::AppHandle) -> Result<(), String> {
+  if let Some(window) = app_handle.get_webview_window("main") {
+    window.hide().map_err(|e| e.to_string())?;
+  }
+  Ok(())
+}
+
+#[derive(Serialize)]
+struct LicenseStatusResponse {
+  status: String,
+}
+
+#[tauri::command]
+fn get_license_status(app_handle: tauri::AppHandle) -> LicenseStatusResponse {
+  let status = match crate::setup::load_config(&app_handle) {
+    Some(cfg) if cfg.license.is_some() => "active",
+    _ => "trial",
+  };
+  LicenseStatusResponse { status: status.to_string() }
+}
+
+#[derive(Deserialize)]
+struct ValidateLicenseInput {
+  key: String,
+}
+
+#[derive(Serialize)]
+struct ValidateLicenseResponse {
+  valid: bool,
+}
+
+fn check_license_format(key: &str) -> bool {
+  let key = key.trim();
+  if key.len() != 19 { return false; }
+  let parts: Vec<&str> = key.split('-').collect();
+  if parts.len() != 4 { return false; }
+  parts.iter().all(|p| p.len() == 4 && p.chars().all(|c| c.is_ascii_alphanumeric()))
+}
+
+#[tauri::command]
+fn validate_license(app_handle: tauri::AppHandle, payload: ValidateLicenseInput) -> ValidateLicenseResponse {
+  let uppercased = payload.key.trim().to_uppercase();
+  if !check_license_format(&uppercased) {
+    return ValidateLicenseResponse { valid: false };
+  }
+  if let Some(mut config) = crate::setup::load_config(&app_handle) {
+    config.license = Some(uppercased);
+    if let Some(app_data_dir) = app_handle.path().app_data_dir().ok() {
+      let config_path = app_data_dir.join("config.json");
+      crate::setup::save_config(&config_path, &config);
+    }
+  }
+  ValidateLicenseResponse { valid: true }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -598,8 +656,17 @@ pub fn run() {
       chat_query,
       get_viewer_page,
       parse_document_text,
-      setup::complete_onboarding
+      setup::complete_onboarding,
+      minimize_to_tray,
+      get_license_status,
+      validate_license
     ])
+    .on_window_event(|window, event| {
+      if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+        let _ = window.hide();
+        api.prevent_close();
+      }
+    })
     .setup(|app| {
       let db_path = db::init_database(app.handle())?;
       let connection = match Connection::open(&db_path) {
@@ -629,6 +696,49 @@ let state = AppState {
       }
 
       app.handle().plugin(tauri_plugin_updater::Builder::default().build())?;
+
+      // Setup tray icon
+      let show_item = tauri::menu::MenuItemBuilder::with_id("show", "Mostra / Nascondi")
+        .build(app)?;
+      let quit_item = tauri::menu::MenuItemBuilder::with_id("quit", "Esci")
+        .build(app)?;
+      let menu = tauri::menu::MenuBuilder::new(app)
+        .item(&show_item)
+        .item(&quit_item)
+        .build()?;
+
+      let icon = app.default_window_icon().cloned().unwrap_or_else(|| {
+        let pixel = [10u8, 26, 59, 255];
+        let mut rgba = Vec::with_capacity(32 * 32 * 4);
+        for _ in 0..(32 * 32) {
+          rgba.extend_from_slice(&pixel);
+        }
+        tauri::image::Image::new(&rgba, 32, 32)
+      });
+
+      let _tray = tauri::tray::TrayIconBuilder::new()
+        .icon(icon)
+        .menu(&menu)
+        .tooltip("SMOT Smart Archive")
+        .on_menu_event(|app, event| {
+          match event.id.as_ref() {
+            "show" => {
+              if let Some(window) = app.get_webview_window("main") {
+                if window.is_visible().unwrap_or(false) {
+                  let _ = window.hide();
+                } else {
+                  let _ = window.show();
+                  let _ = window.set_focus();
+                }
+              }
+            }
+            "quit" => {
+              app.exit(0);
+            }
+            _ => {}
+          }
+        })
+        .build(app)?;
 
       Ok(())
     })

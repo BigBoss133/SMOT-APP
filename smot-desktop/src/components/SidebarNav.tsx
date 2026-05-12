@@ -1,15 +1,18 @@
 import {
   FileText,
   Home,
+  HelpCircle,
   LoaderCircle,
   MessageSquareText,
   Network,
   Settings,
   Upload,
 } from "lucide-react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
+import { HelpCenter } from "./HelpCenter";
 
 const items = [
   { key: "navDashboard", path: "/",               icon: Home },
@@ -25,6 +28,7 @@ export const SidebarNav = () => {
   const { language } = useLanguage();
   const text = translations[language];
   const location = useLocation();
+  const [showHelp, setShowHelp] = useState(false);
 
   const addRipple = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const el = e.currentTarget;
@@ -67,6 +71,18 @@ export const SidebarNav = () => {
           );
         })}
       </nav>
+      <div className="nav-help">
+        <button
+          className="nav-item"
+          onClick={() => setShowHelp(true)}
+          data-testid="nav-help-button"
+          type="button"
+        >
+          <HelpCircle size={17} />
+          <span>{language === "it" ? "Guida" : "Help"}</span>
+        </button>
+      </div>
+      {showHelp && <HelpCenter onClose={() => setShowHelp(false)} />}
     </aside>
   );
 };

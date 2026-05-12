@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { listen } from "@tauri-apps/api/event";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { LicenseBanner } from "./components/LicenseBanner";
 import { RightSystemPanel } from "./components/RightSystemPanel";
 import { SidebarNav } from "./components/SidebarNav";
 import { StatusBar } from "./components/StatusBar";
@@ -12,6 +13,7 @@ import ChatPage from "./pages/ChatPage";
 import DashboardPage from "./pages/DashboardPage";
 import GraphPage from "./pages/GraphPage";
 import IndexingPage from "./pages/IndexingPage";
+import LicenseBlockedPage from "./pages/LicenseBlockedPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import SettingsPage from "./pages/SettingsPage";
 import UploadPage from "./pages/UploadPage";
@@ -22,7 +24,7 @@ import {
   getSystemStatus,
   updateMode,
 } from "./services/api";
-import type { ModeData, SystemStatus, ViewerDocument } from "./types";
+import type { LicenseStatusType, ModeData, SystemStatus, ViewerDocument } from "./types";
 
 const fallbackModes: ModeData = {
   active_mode: "Balanced",
@@ -37,6 +39,8 @@ export default function App() {
   const [documents, setDocuments] = useState<ViewerDocument[]>([]);
   const [modeData, setModeData] = useState<ModeData>(fallbackModes);
   const [searchValue, setSearchValue] = useState("");
+  const [licenseStatus, setLicenseStatus] = useState<LicenseStatusType>("trial");
+  const [licenseBlocked, setLicenseBlocked] = useState(false);
   const location = useLocation();
   const isOnboarding = location.pathname === "/onboarding";
 
@@ -85,8 +89,23 @@ export default function App() {
       });
     };
 
+    const checkLicense = async () => {
+      try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        const info = await invoke<{ status: LicenseStatusType }>("get_license_status");
+        setLicenseStatus(info.status);
+        if (info.status === "blocked") {
+          setLicenseBlocked(true);
+          navigate("/license-blocked");
+        }
+      } catch {
+        // Not in Tauri or license module not ready; use default
+      }
+    };
+
     void bootstrap();
     void setupListener();
+    void checkLicense();
 
     const timer = setInterval(() => {
       void refreshSystem();
@@ -110,39 +129,54 @@ export default function App() {
     }
   };
 
+  const handleLicenseValidated = () => {
+    setLicenseBlocked(false);
+    setLicenseStatus("active");
+    navigate("/");
+  };
+
+  if (licenseBlocked) {
+    return <LicenseBlockedPage onLicenseValidated={handleLicenseValidated} />;
+  }
+
   return (
     <div className="app-shell" data-testid="smot-app-shell">
+      {!isOnboarding && licenseStatus === "grace" && <LicenseBanner />}
+
       {!isOnboarding && <SidebarNav />}
 
       <main className="main-content" data-testid="main-content-area">
-        {!isOnboarding && <header className="topbar" data-testid="main-topbar">}
-          <h1 data-testid="app-main-title">{text.appName}</h1>
-          <div className="topbar-actions" data-testid="topbar-actions">
-            <label className="search-box" data-testid="topbar-search-box">
-              <Search size={15} />
-              <input
-                value={searchValue}
-                onChange={(event) => setSearchValue(event.target.value)}
-                placeholder={text.searchPlaceholder}
-                data-testid="topbar-search-input"
-              />
-            </label>
-            <button
-              className="language-toggle"
-              onClick={toggleLanguage}
-              data-testid="language-toggle-button"
-            >
-              <Languages size={16} />
-              <span data-testid="language-toggle-value">
-                {language.toUpperCase()}
-              </span>
-            </button>
-          </div>
-        </header>}
+        {!isOnboarding && (
+          <header className="topbar" data-testid="main-topbar">
+            <h1 data-testid="app-main-title">{text.appName}</h1>
+            <div className="topbar-actions" data-testid="topbar-actions">
+              <label className="search-box" data-testid="topbar-search-box">
+                <Search size={15} />
+                <input
+                  value={searchValue}
+                  onChange={(event) => setSearchValue(event.target.value)}
+                  placeholder={text.searchPlaceholder}
+                  data-testid="topbar-search-input"
+                />
+              </label>
+              <button
+                className="language-toggle"
+                onClick={toggleLanguage}
+                data-testid="language-toggle-button"
+              >
+                <Languages size={16} />
+                <span data-testid="language-toggle-value">
+                  {language.toUpperCase()}
+                </span>
+              </button>
+            </div>
+          </header>
+        )}
 
         <ErrorBoundary>
           <Routes>
             <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/license-blocked" element={<LicenseBlockedPage onLicenseValidated={handleLicenseValidated} />} />
             <Route
               path="/"
               element={

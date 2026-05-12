@@ -79,3 +79,13 @@ export interface ViewerPageData {
   highlights: string[];
   text: string;
 }
+
+export type LicenseStatusType = "active" | "grace" | "blocked" | "trial";
+
+export interface LicenseInfo {
+  status: LicenseStatusType;
+  plan?: string;
+  expires_at?: string;
+  key?: string;
+  days_left?: number;
+}
