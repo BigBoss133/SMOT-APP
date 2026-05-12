@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "SMOT",
-  "version": "0.1.0",
+  "productName": "SMOT Beta",
+  "version": "0.1.0-beta",
   "identifier": "com.smot.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -61,7 +61,7 @@
       "endpoints": [
         "https://github.com/BigBoss133/SMOT-APP/releases/latest/download/latest.json"
       ],
-      "pubkey": "PLACEHOLDER_PUBLIC_KEY_REPLACE_AFTER_KEY_GENERATION",
+      "pubkey": "dW50cnR1c3RlZCBjb21tZW50OiBtaW5pc2lnbiBwdWJsaWMga2V5OiBGRDFEODFGRDkxQUYyMTcKUldRWDhoclpIOWpoL2RJVjcwQ203eEpNdkpyWFpyakpMdm5Pam9LK05GdU5PTG9FQ1dHVDVvei8K",
       "windows": {
         "installMode": "passive"
       }

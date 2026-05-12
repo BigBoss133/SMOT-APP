@@ -14,6 +14,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - uses: dtolnay/rust-toolchain@stable
+      - name: Add Rust targets
+        run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
       - name: Install dependencies
         run: cd smot-desktop && npm install
       - name: Install Tauri CLI
