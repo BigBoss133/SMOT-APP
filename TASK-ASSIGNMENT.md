@@ -1,6 +1,6 @@
 # TASK-ASSIGNMENT.md — Piano di Lavoro 3 Persone
 
-> **Data:** 13 Maggio 2026 (ultimo aggiornamento: 2026-05-13 16:00)  
+> **Data:** 13 Maggio 2026 (ultimo aggiornamento: 2026-05-13 23:00)  
 > **Team:** Salvatore (Frontend/UX) · Terza Persona (DevOps/Fullstack) · Michele (Backend)  
 > **Regola:** Il lavoro di **Michele viene svolto per ULTIMO**
 
@@ -34,9 +34,9 @@
 | T3 | HEXA-STUDIO | Upgrade Next.js ≥15.5.18 (CVE fix) | `frontend/package.json` | CRITICO |
 | T4 | HEXA-STUDIO | Installare ESLint nel frontend (`npm install --save-dev eslint`) | `frontend/` | ALTO |
 | T5 | HEXA-STUDIO | Creare GitHub Actions CI (lint + build + test) | `.github/workflows/` | MEDIO |
-| T6 | SMOT-Landing-page | Fix CORS wildcard → limitare ai domini autorizzati | `backend/src/index.ts:15` | CRITICO |
-| T7 | SMOT-Landing-page | Aggiungere validazione env var a startup | `backend/src/index.ts` | ALTO |
-| T8 | SMOT-Landing-page | Validare STRIPE_SECRET_KEY a runtime | `backend/src/routes/payments.ts:7` | ALTO |
+| T6 | SMOT-Landing-page | Fix CORS wildcard → limitare ai domini autorizzati | `backend/src/index.ts:15` | ✅ COMPLETATO |
+| T7 | SMOT-Landing-page | Aggiungere validazione env var a startup | `backend/src/index.ts` | ✅ COMPLETATO |
+| T8 | SMOT-Landing-page | Validare STRIPE_SECRET_KEY a runtime | `backend/src/routes/payments.ts:7` | ✅ COMPLETATO |
 
 ### 🔴 Michele — Backend Critici (ULTIMO)
 | # | Repo | Task | File/Riferimento | Priorità |
@@ -63,7 +63,7 @@
 ### 🟢 Terza Persona
 | # | Repo | Task | File/Riferimento | Priorità |
 |---|------|------|------------------|----------|
-| T9 | SMOT-APP | Verificare Tauri build (`npm run tauri build`) con Rust toolchain | `src-tauri/` | ALTO |
+| T9 | SMOT-APP | Verificare Tauri build (`npm run tauri build`) con Rust toolchain | `src-tauri/` | ✅ COMPLETATO |
 | T10 | offline-smart-archive | Aggiungere `.env.example` con tutte le variabili necessarie | root del progetto | MEDIO |
 | T11 | offline-smart-archive | Fix generic exception handling → eccezioni specifiche | `backend/services/llm.py:75`, `model_manager.py:107` | MEDIO |
 | T12 | HEXA-STUDIO | Aggiungere `.env.example` con password sicure per produzione | `backend/.env.example` | MEDIO |
@@ -143,10 +143,36 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 | Repo | Build | Lint/Tests | Sicurezza | Critici |
 |------|-------|-------------|-----------|---------|
 | HEXA-STUDIO | ✅ Frontend OK, ❌ Pytest (no DB) | ❌ ESLint mancante | ⚠️ Next.js CVE | 1 critical npm |
-| SMOT-APP | ✅ Build OK | ✅ Lint OK (2 warning) | ✅ 0 vulnerabilità | Tauri build non verificata |
-| SMOT-Landing-page | ❓ Non verificata | ❌ Nessun lint/test | 🔴 JWT hardcoded, CORS wildcard | 3 critici |
+| SMOT-APP | ✅ Build OK | ✅ 62 test OK, clippy clean | ✅ 0 vulnerabilità | ✅ Tauri build verificata (deb/rpm/AppImage) |
+| SMOT-Landing-page | ✅ Backend OK | ✅ TypeScript OK (1 warning pre-esistente) | ✅ CORS fix + env validation + Stripe check | 0 critici rimasti |
 | SMOT-CREATE | ❓ Non verificata | ❌ Zero test | ⚠️ CORS wildcard | Templates mancanti |
 | offline-smart-archive | 🔴 Build fallita (PostCSS) | ❓ Non verificata | ⚠️ Debug mode | PostCSS config |
 | smot | ✅ 15 test passano | ⚠️ Warnings async | ✅ Nessun critico | Nessun remote |
 | SMOT-KNOW | ❓ Solo MDX | ❌ Zero test | ❓ Da verificare | — |
 | dotfiles | ✅ | ✅ | ✅ | — |
+
+---
+
+## Progresso Terza Persona (Tommaso)
+
+| Fase | Task | Stato |
+|------|------|:-----:|
+| **FASE 1** | T6 — CORS fix SMOT-Landing-page | ✅ Commit `e07445b` |
+| **FASE 1** | T7 — Env validation startup | ✅ Commit `e07445b` |
+| **FASE 1** | T8 — Stripe key runtime check | ✅ Commit `e07445b` |
+| **FASE 2** | T9 — Tauri build SMOT-APP | ✅ Commit `ce57fd3` |
+| **FASE 1** | T1-T5 — offline-smart-archive + HEXA-STUDIO | ⏳ Repo non trovate su GitHub |
+| **FASE 2** | T10-T13 — offline-smart-archive + HEXA-STUDIO | ⏳ Stesse repo mancanti |
+| **FASE 3** | T14-T17 | ⏳ Stesse repo mancanti |
+
+### Dettaglio T6-T8 (SMOT-Landing-page)
+- **T6**: Rimosso fallback `|| '*'` in CORS, ora richiede `FRONTEND_URL` obbligatorio
+- **T7**: Funzione `validateEnv()` a startup: check `FRONTEND_URL`, `JWT_SECRET`, `STRIPE_SECRET_KEY` presenti + validazione formato
+- **T8**: Funzione `getStripe()` in `payments.ts` con validazione runtime della key
+
+### Dettaglio T9 (SMOT-APP)
+- Build Rust: ✅ 0 errori
+- Test Rust: ✅ **62 passati**
+- Clippy: ✅ `-D warnings` pulito (fix: `Image::new_owned`, unused imports, `match_result_ok`, `#[allow(dead_code)]`)
+- Bundle prodotti: `.deb`, `.rpm`, `.AppImage`
+- Fix aggiuntivo: `yarn` → `npm run` in `tauri.conf.json` (yarn non installato)
