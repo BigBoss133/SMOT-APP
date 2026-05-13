@@ -1,7 +1,7 @@
 # TASK-ASSIGNMENT.md — Piano di Lavoro 3 Persone
 
 > **Data:** 13 Maggio 2026 (ultimo aggiornamento: 2026-05-13 23:00)  
-> **Team:** Salvatore (Frontend/UX) · Terza Persona (DevOps/Fullstack) · Michele (Backend)  
+> **Team:** Salvatore (Frontend/UX) · Tommaso (DevOps/Fullstack) · Michele (Backend)  
 > **Regola:** Il lavoro di **Michele viene svolto per ULTIMO**
 
 ---
@@ -11,7 +11,7 @@
 | Ruolo | Persona | Focus |
 |-------|---------|-------|
 | 🔵 Frontend/UX | Salvatore | UI, React, componenti, accessibility, animazioni |
-| 🟢 DevOps/Fullstack | Terza Persona | Infrastruttura, CI/CD, sicurezza, build, config |
+| 🟢 DevOps/Fullstack | Tommaso | Infrastruttura, CI/CD, sicurezza, build, config |
 | 🔴 Backend | Michele (ULTIMO) | API, database, logica server, sicurezza backend |
 
 ---
@@ -26,7 +26,7 @@
 | S3 | SMOT-Landing-page | Rimuovere API URL hardcoded localhost → env var | `src/services/api.ts:1` | CRITICO |
 | S4 | SMOT-Landing-page | Aggiungere ESLint + Prettier config | root del progetto | MEDIO |
 
-### 🟢 Terza Persona — DevOps/Fullstack Critici
+### 🟢 Tommaso — DevOps/Fullstack Critici
 | # | Repo | Task | File/Riferimento | Priorità |
 |---|------|------|------------------|----------|
 | T1 | offline-smart-archive | Fix PostCSS config → installare `@tailwindcss/postcss` e aggiornare `postcss.config.js` | `postcss.config.js` | CRITICO |
@@ -60,7 +60,7 @@
 | S8 | SMOT-APP | Aggiungere test E2E Playwright | `e2e/` o `tests/` | MEDIO |
 | S9 | SMOT-Landing-page | Aggiungere test (Vitest per unit, Playwright per E2E) | root del progetto | ALTO |
 
-### 🟢 Terza Persona
+### 🟢 Tommaso
 | # | Repo | Task | File/Riferimento | Priorità |
 |---|------|------|------------------|----------|
 | T9 | SMOT-APP | Verificare Tauri build (`npm run tauri build`) con Rust toolchain | `src-tauri/` | ✅ COMPLETATO |
@@ -88,7 +88,7 @@
 | S10 | SMOT-Landing-page | Aggiungere test accessibilità (axe-core) | root del progetto |
 | S11 | SMOT-Landing-page | SEO optimization (meta tags, sitemap, robots.txt) | root del progetto |
 
-### 🟢 Terza Persona
+### 🟢 Tommaso
 | # | Repo | Task | File/Riferimento |
 |---|------|------|------------------|
 | T14 | offline-smart-archive | Rinominare progetto in `pyproject.toml` per coerenza | `pyproject.toml:3` |
@@ -111,17 +111,17 @@
 ```
 FASE 1 (Critici)
 ├── 🔵 Salvatore: S1, S2, S3, S4
-├── 🟢 Terza Persona: T1, T2, T3, T4, T5, T6, T7, T8
+├── 🟢 Tommaso: T1, T2, T3, T4, T5, T6, T7, T8
 └── 🔴 Michele (ULTIMO): M1, M2, M3, M4, M5
 
 FASE 2 (Alti)
 ├── 🔵 Salvatore: S5, S6, S7, S8, S9
-├── 🟢 Terza Persona: T9, T10, T11, T12, T13
+├── 🟢 Tommaso: T9, T10, T11, T12, T13
 └── 🔴 Michele (ULTIMO): M6, M7, M8, M9, M10
 
 FASE 3 (Bassi)
 ├── 🔵 Salvatore: S10, S11
-├── 🟢 Terza Persona: T14, T15, T16, T17
+├── 🟢 Tommaso: T14, T15, T16, T17
 └── 🔴 Michele (ULTIMO): M11, M12, M13, M14
 ```
 
@@ -131,7 +131,7 @@ FASE 3 (Bassi)
 
 Ogni task ha un codice:
 - **S** = Salvatore (Frontend/UX)
-- **T** = Terza Persona (DevOps/Fullstack)  
+- **T** = Tommaso (DevOps/Fullstack)  
 - **M** = Michele (Backend) — **SEMPRE PER ULTIMO**
 
 Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05-13.md` nella repo corrispondente per dettagli completi.
@@ -153,7 +153,7 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 
 ---
 
-## Progresso Terza Persona (Tommaso)
+## Progresso Tommaso
 
 | Fase | Task | Stato |
 |------|------|:-----:|
