@@ -1,6 +1,6 @@
 # TASK-ASSIGNMENT.md — Piano di Lavoro 3 Persone
 
-> **Data:** 13 Maggio 2026  
+> **Data:** 13 Maggio 2026 (ultimo aggiornamento: 2026-05-13 16:00)  
 > **Team:** Salvatore (Frontend/UX) · Terza Persona (DevOps/Fullstack) · Michele (Backend)  
 > **Regola:** Il lavoro di **Michele viene svolto per ULTIMO**
 
