@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function useStaggerAnimation(count: number, delay = 80) {
-  const [visible, setVisible] = useState<boolean[]>(Array(count).fill(false));
+  const prevCount = useRef(count);
+  const [visible, setVisible] = useState<boolean[]>(() => Array(count).fill(false));
 
   useEffect(() => {
-    setVisible(Array(count).fill(false));
+    if (prevCount.current !== count) {
+      prevCount.current = count;
+      setVisible(Array(count).fill(false));
+    }
     const timers = Array.from({ length: count }, (_, i) =>
       setTimeout(() => {
         setVisible(prev => {

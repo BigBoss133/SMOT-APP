@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Sparkles, Cpu, Key, File, ChevronRight } from "lucide-react";
 
 interface CompletionStepProps {
@@ -23,11 +23,7 @@ const tierColors: Record<string, { bg: string; text: string }> = {
 };
 
 export function CompletionStep({ summary, onFinish, t }: CompletionStepProps) {
-  const [showConfetti, setShowConfetti] = useState(false);
-
-  useEffect(() => {
-    setShowConfetti(true);
-  }, []);
+  const [showConfetti] = useState(true);
 
   const summaryItems = [
     {
@@ -98,7 +94,7 @@ export function CompletionStep({ summary, onFinish, t }: CompletionStepProps) {
 }
 
 function ConfettiAnimation() {
-  const [pieces, setPieces] = useState<
+  const [pieces] = useState<
     Array<{
       id: number;
       left: number;
@@ -106,19 +102,16 @@ function ConfettiAnimation() {
       duration: number;
       color: string;
     }>
-  >([]);
-
-  useEffect(() => {
+  >(() => {
     const colors = ["#4338f5", "#894df8", "#bcc41c", "#10981a", "#f59e0b"];
-    const newPieces = Array.from({ length: 50 }).map((_, i) => ({
+    return Array.from({ length: 50 }).map((_, i) => ({
       id: i,
       left: Math.random() * 100,
       delay: Math.random() * 2,
       duration: 3 + Math.random() * 2,
       color: colors[Math.floor(Math.random() * colors.length)],
     }));
-    setPieces(newPieces);
-  }, []);
+  });
 
   return (
     <div style={styles.confettiContainer}>
