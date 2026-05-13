@@ -39,8 +39,6 @@ export default function App() {
   const [documents, setDocuments] = useState<ViewerDocument[]>([]);
   const [modeData, setModeData] = useState<ModeData>(fallbackModes);
   const [searchValue, setSearchValue] = useState("");
-  const [licenseStatus, setLicenseStatus] = useState<LicenseStatusType>("trial");
-  const [licenseBlocked, setLicenseBlocked] = useState(false);
   const location = useLocation();
   const isOnboarding = location.pathname === "/onboarding";
 
@@ -141,37 +139,33 @@ export default function App() {
 
   return (
     <div className="app-shell" data-testid="smot-app-shell">
-      {!isOnboarding && licenseStatus === "grace" && <LicenseBanner />}
-
       {!isOnboarding && <SidebarNav />}
 
       <main className="main-content" data-testid="main-content-area">
-        {!isOnboarding && (
-          <header className="topbar" data-testid="main-topbar">
-            <h1 data-testid="app-main-title">{text.appName}</h1>
-            <div className="topbar-actions" data-testid="topbar-actions">
-              <label className="search-box" data-testid="topbar-search-box">
-                <Search size={15} />
-                <input
-                  value={searchValue}
-                  onChange={(event) => setSearchValue(event.target.value)}
-                  placeholder={text.searchPlaceholder}
-                  data-testid="topbar-search-input"
-                />
-              </label>
-              <button
-                className="language-toggle"
-                onClick={toggleLanguage}
-                data-testid="language-toggle-button"
-              >
-                <Languages size={16} />
-                <span data-testid="language-toggle-value">
-                  {language.toUpperCase()}
-                </span>
-              </button>
-            </div>
-          </header>
-        )}
+        {!isOnboarding && <header className="topbar" data-testid="main-topbar">}
+          <h1 data-testid="app-main-title">{text.appName}</h1>
+          <div className="topbar-actions" data-testid="topbar-actions">
+            <label className="search-box" data-testid="topbar-search-box">
+              <Search size={15} />
+              <input
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder={text.searchPlaceholder}
+                data-testid="topbar-search-input"
+              />
+            </label>
+            <button
+              className="language-toggle"
+              onClick={toggleLanguage}
+              data-testid="language-toggle-button"
+            >
+              <Languages size={16} />
+              <span data-testid="language-toggle-value">
+                {language.toUpperCase()}
+              </span>
+            </button>
+          </div>
+        </header>}
 
         <ErrorBoundary>
           <Routes>

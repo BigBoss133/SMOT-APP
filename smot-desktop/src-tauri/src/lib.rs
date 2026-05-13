@@ -173,7 +173,7 @@ async fn get_system_status(state: tauri::State<'_, AppState>) -> Result<SystemSt
   let mut sys = System::new_all();
   sys.refresh_all();
 
-  let cpu = sys.cpus().first().map(|c| c.cpu_usage() as u8).unwrap_or(0);
+  let cpu = sys.global_cpu_usage() as u8;
   let ram_total = sys.total_memory() as f32 / 1073741824.0;
   let ram_used = (sys.total_memory() - sys.available_memory()) as f32 / 1073741824.0;
 
@@ -411,45 +411,62 @@ async fn chat_query(state: tauri::State<'_, AppState>, payload: ChatQueryInput) 
   if payload.question.trim().is_empty() {
     return Err("Query cannot be empty".to_string());
   }
-  if payload.question.len() > 1000 {
-    return Err("Query too long (max 1000 characters)".to_string());
-  }
 
-  ollama::check_rate_limit().map_err(|e| e.to_string())?;
+  // --- DB operations (lock is dropped before async) ---
+  let sources = {
+  let db = state.db.lock().map_err(|e| e.to_string())?;
 
-  let (sources, context) = {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+  // Build FTS5 search query from user question words
+  let search_query = payload.question.split_whitespace()
+    .filter(|w| w.len() > 2)
+    .map(|w| format!("\"{}\"", w))
+    .collect::<Vec<_>>()
+    .join(" OR ");
 
-    // Build FTS5 search query from user question words
-    let search_query = payload.question.split_whitespace()
-      .filter(|w| w.len() > 2)
-      .map(|w| format!("\"{}\"", w))
-      .collect::<Vec<_>>()
-      .join(" OR ");
+  let mut sources = Vec::new();
 
-    let mut sources = Vec::new();
+  if !search_query.is_empty() {
+    let fts_sql = format!(
+      "SELECT c.document_id, d.name, c.chunk_index, snippet(fts_documents, 0, '<mark>', '</mark>', '...', 40) as snippet \
+       FROM fts_documents fts \
+       JOIN document_chunks c ON fts.rowid = c.rowid \
+       JOIN documents d ON c.document_id = d.id \
+       WHERE fts_documents MATCH ?1 \
+       ORDER BY rank \
+       LIMIT 5"
+    );
 
-    if !search_query.is_empty() {
-      let results = db::search_fts5(&db, &search_query)
-        .map_err(|e| e.to_string())?;
-      for r in results {
-        sources.push(ChatSource {
-          document_id: r.document_id,
-          document_name: r.document_name,
-          page: (r.chunk_index as u8) + 1,
-          snippet: r.snippet,
-        });
+    let mut stmt = db.prepare(&fts_sql).map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map(rusqlite::params![&search_query], |row| {
+      let doc_id: String = row.get(0)?;
+      let doc_name: String = row.get(1)?;
+      let chunk_idx: i64 = row.get(2)?;
+      let snippet_text: String = row.get(3)?;
+
+      Ok(ChatSource {
+        document_id: doc_id,
+        document_name: doc_name,
+        page: (chunk_idx as u8) + 1,
+        snippet: snippet_text,
+      })
+    }).map_err(|e| e.to_string())?;
+
+    for row in rows {
+      if let Ok(source) = row {
+        sources.push(source);
       }
     }
+  }
 
-    // Build context from sources
-    let context = sources.iter()
-      .map(|s| format!("[Document: {} | Page: {}] {}", s.document_name, s.page, s.snippet))
-      .collect::<Vec<_>>()
-      .join("\n\n");
+  sources
+  }; // DB lock is DROPPED here
 
-    (sources, context)
-  };
+  // Build context from sources
+  let context = sources.iter()
+    .map(|s| format!("[Document: {} | Page: {}] {}", s.document_name, s.page, s.snippet))
+    .collect::<Vec<_>>()
+    .join("\n\n");
 
   // No results — return early
   if sources.is_empty() {
@@ -656,10 +673,7 @@ pub fn run() {
       chat_query,
       get_viewer_page,
       parse_document_text,
-      setup::complete_onboarding,
-      minimize_to_tray,
-      get_license_status,
-      validate_license
+      setup::complete_onboarding
     ])
     .on_window_event(|window, event| {
       if let tauri::WindowEvent::CloseRequested { api, .. } = event {

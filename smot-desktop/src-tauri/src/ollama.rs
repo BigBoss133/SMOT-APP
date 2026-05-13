@@ -107,10 +107,10 @@ pub async fn pull_ollama_model(model: String, app: AppHandle, state: State<'_, c
             let percent = if total > 0.0 { (completed / total) * 100.0 } else { 0.0 };
             let status_str = status["status"].as_str().unwrap_or("downloading").to_string();
             
-            let elapsed_secs = start_time.elapsed().as_secs_f64().max(0.001);
-            let completed_mb = completed / 1_048_576.0;
-            let total_mb = total / 1_048_576.0;
-            let speed_mbps = completed_mb / (elapsed_secs as f32);
+            let elapsed_secs = start_time.elapsed().as_secs_f64().max(0.001) as f32;
+            let completed_mb = completed / 1_048_576.0f32;
+            let total_mb = total / 1_048_576.0f32;
+            let speed_mbps = completed_mb / elapsed_secs;
             let eta_seconds = if speed_mbps > 0.01 {
                 ((total_mb - completed_mb) / speed_mbps) as i64
             } else {

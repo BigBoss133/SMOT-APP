@@ -84,13 +84,8 @@ export default function OnboardingPage() {
     setFirstDoc(file);
   }, []);
 
-  const handleSkipAll = useCallback(async () => {
-    try {
-      await invoke("complete_onboarding");
-    } catch {
-      // ignore
-    }
-    success(translations[language].welcomeOnboarding);
+  const handleFinish = useCallback(async () => {
+    await invoke("complete_onboarding");
     navigate("/");
   }, [navigate, success, language]);
 

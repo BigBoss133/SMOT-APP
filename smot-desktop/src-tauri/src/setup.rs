@@ -38,6 +38,28 @@ pub fn save_config(path: &PathBuf, config: &Config) {
     }
 }
 
+pub fn config_path(app: &tauri::App) -> Result<PathBuf, String> {
+    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    Ok(app_data_dir.join("config.json"))
+}
+
+pub fn load_config_from_path(path: &PathBuf) -> Option<Config> {
+    fs::read_to_string(path).ok().and_then(|content| serde_json::from_str(&content).ok())
+}
+
+pub fn save_config(path: &PathBuf, config: &Config) {
+    match serde_json::to_string_pretty(config) {
+        Ok(json) => {
+            if let Err(e) = fs::write(path, json) {
+                log::error!("Failed to write config: {}", e);
+            } else {
+                log::info!("Config salvato: {}", path.display());
+            }
+        }
+        Err(e) => log::error!("Failed to serialize config: {}", e),
+    }
+}
+
 pub fn on_app_startup(app: &mut tauri::App) {
     let app_data_dir = match app.path().app_data_dir() {
         Ok(dir) => dir,
@@ -50,8 +72,8 @@ pub fn on_app_startup(app: &mut tauri::App) {
         }
     }
 
-    match crate::db::init_database(app.handle()) {
-        Ok(db_path) => log::info!("SQLite inizializzato: {}", db_path.display()),
+    match crate::db::init_database(&app.handle()) {
+        Ok(_) => log::info!("SQLite inizializzato"),
         Err(e) => { log::error!("Failed to init database: {}", e); return; }
     }
 
