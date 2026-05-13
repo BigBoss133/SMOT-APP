@@ -197,6 +197,7 @@ pub async fn start_indexing(
         }
     };
 
+
     let total = documents.len() as u32;
     {
         let mut st = controller.state.lock().unwrap_or_else(|e| e.into_inner());

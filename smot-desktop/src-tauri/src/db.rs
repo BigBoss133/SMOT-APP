@@ -14,7 +14,7 @@ pub fn resolve_db_path(app_handle: &AppHandle) -> Result<PathBuf, Box<dyn std::e
 pub fn init_database(app_handle: &AppHandle) -> Result<PathBuf, Box<dyn std::error::Error>> {
   let db_path = resolve_db_path(app_handle)?;
   let connection = Connection::open(&db_path)?;
-  connection.execute_batch(INITIAL_SCHEMA)?;
+  connection.execute_batch(INITIAL_SCHEMA).map_err(|e| format!("Failed to initialize schema: {}", e))?;
   Ok(db_path)
 }
 
