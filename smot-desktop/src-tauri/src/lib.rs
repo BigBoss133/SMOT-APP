@@ -11,7 +11,7 @@ use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use sysinfo::{Disks, System};
-use tauri::{Manager, menu::{MenuBuilder, MenuItemBuilder}, Runtime, tray::{TrayIconBuilder, MouseButton, MouseButtonState}};
+use tauri::Manager;
 
 pub struct AppState {
   active_mode: Mutex<String>,
@@ -628,7 +628,7 @@ fn validate_license(app_handle: tauri::AppHandle, payload: ValidateLicenseInput)
   }
   if let Some(mut config) = crate::setup::load_config(&app_handle) {
     config.license = Some(uppercased);
-    if let Some(app_data_dir) = app_handle.path().app_data_dir().ok() {
+    if let Ok(app_data_dir) = app_handle.path().app_data_dir() {
       let config_path = app_data_dir.join("config.json");
       crate::setup::save_config(&config_path, &config);
     }
@@ -713,7 +713,7 @@ let state = AppState {
         for _ in 0..(32 * 32) {
           rgba.extend_from_slice(&pixel);
         }
-        tauri::image::Image::new(&rgba, 32, 32)
+        tauri::image::Image::new_owned(rgba, 32, 32)
       });
 
       let _tray = tauri::tray::TrayIconBuilder::new()
