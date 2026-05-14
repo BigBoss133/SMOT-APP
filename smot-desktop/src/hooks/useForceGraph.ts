@@ -165,6 +165,7 @@ export function useForceGraph(
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       simRef.current = null;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documents.length, relations.length, width, height]);
 
   return state;

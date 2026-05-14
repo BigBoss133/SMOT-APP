@@ -91,6 +91,7 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
     return () => {
       if (unlisten) unlisten();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDownloadModel = async (modelId: string) => {
