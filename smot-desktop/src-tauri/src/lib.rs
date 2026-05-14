@@ -273,24 +273,11 @@ fn upload_documents(
   let mut uploaded = Vec::new();
 
   for file_path_str in &payload.files {
-    if file_path_str.trim().is_empty() {
-      return Err("Filename cannot be empty".to_string());
-    }
-    if file_path_str.contains("..") {
-      return Err(format!("Invalid path (path traversal not allowed): {}", file_path_str));
-    }
+    validate_upload_file_path(file_path_str)?;
+
     let src = PathBuf::from(file_path_str);
     if !src.exists() {
       return Err(format!("File not found: {}", file_path_str));
-    }
-
-    // Check for Windows reserved names
-    let stem = src.file_stem()
-        .and_then(|s| s.to_str())
-        .unwrap_or("");
-    let reserved_names = ["CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "LPT1", "LPT2", "LPT3"];
-    if reserved_names.contains(&stem.to_uppercase().as_str()) {
-      return Err(format!("Invalid filename (reserved name): {}", file_path_str));
     }
 
     let ext = src
@@ -304,12 +291,6 @@ fn upload_documents(
       .and_then(|n| n.to_str())
       .unwrap_or("unknown")
       .to_string();
-
-    const RESERVED_WINDOWS_NAMES: &[&str] = &["CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"];
-    let stem = src.file_stem().and_then(|s| s.to_str()).unwrap_or("");
-    if RESERVED_WINDOWS_NAMES.contains(&stem.to_uppercase().as_str()) {
-      return Err(format!("Invalid filename (reserved Windows name): {}", file_name));
-    }
 
     let file_size = src.metadata().map(|m| m.len() as i64).unwrap_or(0);
     let uuid = uuid::Uuid::new_v4().to_string();
