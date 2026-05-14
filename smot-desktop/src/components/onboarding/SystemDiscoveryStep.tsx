@@ -59,7 +59,9 @@ export function SystemDiscoveryStep({ profile, tier, t }: SystemDiscoveryStepPro
     },
     {
       icon: <Monitor size={20} />,
-      text: `✅ ${profile?.gpu_name ?? "Nessuna GPU dedicata"} — ${profile?.gpu_vram_gb ? `${profile.gpu_vram_gb}GB VRAM` : "modalità CPU"}`,
+      text: profile?.is_unified_memory
+        ? `✅ Memoria Unificata — ${profile?.ram_available_gb ?? "?"} GB disponibili di ${profile?.ram_total_gb ?? "?"} GB totali`
+        : `✅ ${profile?.gpu_name ?? "Nessuna GPU dedicata"} — ${profile?.gpu_vram_gb ? `${profile.gpu_vram_gb}GB VRAM` : "modalità CPU"}`,
     },
     {
       icon: <Sparkles size={20} />,
