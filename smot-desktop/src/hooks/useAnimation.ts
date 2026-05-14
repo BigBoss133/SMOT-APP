@@ -1,22 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer } from 'react';
+
+type Action = { index: number } | { reset: number };
+
+function staggerReducer(state: boolean[], action: Action): boolean[] {
+  if ('reset' in action) {
+    return Array(action.reset).fill(false);
+  }
+  const next = [...state];
+  next[action.index] = true;
+  return next;
+}
 
 export function useStaggerAnimation(count: number, delay = 80) {
-  const prevCount = useRef(count);
-  const [visible, setVisible] = useState<boolean[]>(() => Array(count).fill(false));
+  const [visible, dispatch] = useReducer(staggerReducer, count, (c: number) => Array(c).fill(false));
 
   useEffect(() => {
-    if (prevCount.current !== count) {
-      prevCount.current = count;
-      setVisible(Array(count).fill(false));
-    }
+    dispatch({ reset: count });
     const timers = Array.from({ length: count }, (_, i) =>
-      setTimeout(() => {
-        setVisible(prev => {
-          const next = [...prev];
-          next[i] = true;
-          return next;
-        });
-      }, i * delay)
+      setTimeout(() => dispatch({ index: i }), i * delay)
     );
     return () => timers.forEach(clearTimeout);
   }, [count, delay]);
