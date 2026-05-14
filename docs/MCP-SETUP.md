@@ -172,6 +172,39 @@ npx sigmap --dashboard
 
 ---
 
+---
+
+## 🧪 Test Onboarding con MCP
+
+### Playwright E2E
+
+```bash
+# Aprire browser e navigare il wizard onboarding
+npx playwright open http://localhost:5173
+
+# Screenshot di ogni step del wizard
+npx playwright screenshot --full-page http://localhost:5173/onboarding
+```
+
+### Verifica Flusso Completo
+
+| Step | Cosa testare | Comando Playwright |
+|------|-------------|-------------------|
+| 1. System Discovery | Barra progresso animata, tier rilevato | `page.getByTestId('discovery-progress').waitFor()` |
+| 2. Welcome | Testo personalizzato in base al tier | `page.getByText(/Configurazione/).isVisible()` |
+| 3. Licenza/Trial | Bottone skip + attivazione chiave | `page.getByText('Prova gratuita').click()` |
+| 4. Primo documento | Drop zone file + skip | `page.getByText('Salta').click()` |
+| 5. Onboarding completo | Confetti animati, riepilogo | `page.getByTestId('completion-step').waitFor()` |
+
+### Sigmap per Onboarding
+
+```bash
+# Verificare che le firme del progetto includano i file onboarding
+npx sigmap --report | grep -i onboarding
+```
+
+---
+
 ## 🔗 Risorse
 
 - [OpenCode Docs](https://opencode.ai)
