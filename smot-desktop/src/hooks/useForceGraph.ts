@@ -60,7 +60,7 @@ export function useForceGraph(
   useEffect(() => {
     docsRef.current = documents;
     relsRef.current = relations;
-  });
+  }, [documents, relations]);
 
   const docCount = documents.length;
   const relCount = relations.length;

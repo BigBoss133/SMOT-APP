@@ -65,7 +65,7 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
   useEffect(() => {
     textRef.current = text;
     toastRef.current = toast;
-  });
+  }, [text, toast]);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;

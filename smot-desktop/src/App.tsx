@@ -84,10 +84,13 @@ export default function App() {
 
     const setupListener = async () => {
       try {
-        const { listen } = await import("@tauri-apps/api/event");
-        unlisten = await listen("first-launch", () => {
-          navigate("/onboarding");
-        });
+        // @ts-ignore
+        if (window.__TAURI_INTERNALS__) {
+          const tauriEvent = await import("@tauri-apps/api/event");
+          unlisten = await tauriEvent.listen("first-launch", () => {
+            navigate("/onboarding");
+          });
+        }
       } catch {
         // Not in Tauri environment
       }
@@ -95,12 +98,15 @@ export default function App() {
 
     const checkLicense = async () => {
       try {
-        const { invoke } = await import("@tauri-apps/api/core");
-        const info = await invoke<{ status: LicenseStatusType }>("get_license_status");
-        setLicenseStatus(info.status);
-        if (info.status === "blocked") {
-          setLicenseBlocked(true);
-          navigate("/license-blocked");
+        // @ts-ignore
+        if (window.__TAURI_INTERNALS__) {
+          const tauriCore = await import("@tauri-apps/api/core");
+          const info = await tauriCore.invoke<{ status: LicenseStatusType }>("get_license_status");
+          setLicenseStatus(info.status);
+          if (info.status === "blocked") {
+            setLicenseBlocked(true);
+            navigate("/license-blocked");
+          }
         }
       } catch {
         // Not in Tauri or license module not ready; use default

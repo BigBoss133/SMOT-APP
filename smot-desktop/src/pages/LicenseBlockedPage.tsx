@@ -33,12 +33,15 @@ export default function LicenseBlockedPage({ onLicenseValidated }: LicenseBlocke
       return;
     }
     try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      const result = await invoke<{ valid: boolean }>("validate_license", { key: licenseKey });
-      if (result.valid) {
-        onLicenseValidated?.();
-      } else {
-        setError(t.license.invalidKey);
+      // @ts-ignore
+      if (window.__TAURI_INTERNALS__) {
+        const tauriCore = await import("@tauri-apps/api/core");
+        const result = await tauriCore.invoke<{ valid: boolean }>("validate_license", { key: licenseKey });
+        if (result.valid) {
+          onLicenseValidated?.();
+        } else {
+          setError(t.license.invalidKey);
+        }
       }
     } catch {
       setError(t.license.invalidKey);
