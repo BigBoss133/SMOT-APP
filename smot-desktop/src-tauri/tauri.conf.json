@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "SMOT Beta",
-  "version": "0.1.0",
+  "version": "0.1.0-beta",
   "identifier": "com.smot.desktop",
   "build": {
     "frontendDist": "../dist",
