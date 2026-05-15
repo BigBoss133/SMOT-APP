@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { ShieldAlert, Check, ExternalLink } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
@@ -34,6 +33,7 @@ export default function LicenseBlockedPage({ onLicenseValidated }: LicenseBlocke
       return;
     }
     try {
+      const { invoke } = await import("@tauri-apps/api/core");
       const result = await invoke<{ valid: boolean }>("validate_license", { key: licenseKey });
       if (result.valid) {
         onLicenseValidated?.();

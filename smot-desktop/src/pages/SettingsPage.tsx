@@ -59,6 +59,14 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
     { id: "nomic-embed-text", name: "Nomic Embed Text", size: "274 MB" },
   ];
 
+  const textRef = useRef(text);
+  const toastRef = useRef(toast);
+
+  useEffect(() => {
+    textRef.current = text;
+    toastRef.current = toast;
+  });
+
   useEffect(() => {
     let unlisten: (() => void) | undefined;
 
@@ -73,7 +81,7 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
         setDownloadProgress(progress);
         if (progress.status === "complete") {
           setDownloadingModel(null);
-          toast.success(text.modelDownloaded);
+          toastRef.current.success(textRef.current.modelDownloaded);
           void fetchStatus();
         }
       });
@@ -91,7 +99,6 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
     return () => {
       if (unlisten) unlisten();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDownloadModel = async (modelId: string) => {
@@ -391,7 +398,6 @@ const isModelInstalled = (modelId: string) => {
         confirmLabel={text.deleteModel}
         confirmVariant="danger"
         onConfirm={() => {
-          // TODO: wire to actual model deletion API when available
           setModelToDelete(null);
         }}
         onCancel={() => setModelToDelete(null)}

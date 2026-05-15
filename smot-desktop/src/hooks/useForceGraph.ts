@@ -54,17 +54,30 @@ export function useForceGraph(
   const [state, setState] = useState<ForceGraphState>({ nodePositions: [], linkPositions: [] });
   const rafRef = useRef<number | null>(null);
   const simRef = useRef<{ nodes: SimNode[]; links: SimLink[]; alpha: number } | null>(null);
+  const docsRef = useRef(documents);
+  const relsRef = useRef(relations);
 
   useEffect(() => {
-    if (!documents.length || width === 0 || height === 0) return;
+    docsRef.current = documents;
+    relsRef.current = relations;
+  });
+
+  const docCount = documents.length;
+  const relCount = relations.length;
+
+  useEffect(() => {
+    if (!docCount || width === 0 || height === 0) return;
+
+    const docs = docsRef.current;
+    const rels = relsRef.current;
 
     const connMap = new Map<string, number>();
-    relations.forEach(r => {
+    rels.forEach(r => {
       connMap.set(r.source, (connMap.get(r.source) ?? 0) + 1);
       connMap.set(r.target, (connMap.get(r.target) ?? 0) + 1);
     });
 
-    const nodes: SimNode[] = documents.map(doc => ({
+    const nodes: SimNode[] = docs.map(doc => ({
       id: doc.id,
       x: width / 2 + (Math.random() - 0.5) * 200,
       y: height / 2 + (Math.random() - 0.5) * 200,
@@ -73,7 +86,7 @@ export function useForceGraph(
       size: Math.min(doc.size_kb / 1000, 4),
     }));
 
-    const links: SimLink[] = relations.map(r => ({
+    const links: SimLink[] = rels.map(r => ({
       source: r.source, target: r.target,
       strength: r.strength, type: r.type,
     }));
@@ -93,12 +106,10 @@ export function useForceGraph(
       const map = nodeMap();
       const alpha = sim.alpha;
 
-      // Link force
       for (const link of sim.links) {
         const s = typeof link.source === 'string' ? map.get(link.source)! : link.source as SimNode;
         const t = typeof link.target === 'string' ? map.get(link.target)! : link.target as SimNode;
         if (!s || !t) continue;
-        // Resolve source/target to objects after first tick
         link.source = s;
         link.target = t;
         const dx = (t.x - s.x) || 0.01;
@@ -110,7 +121,6 @@ export function useForceGraph(
         t.vx -= dx * force; t.vy -= dy * force;
       }
 
-      // Many-body (repulsion)
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           const a = nodes[i], b = nodes[j];
@@ -124,18 +134,15 @@ export function useForceGraph(
         }
       }
 
-      // Center force
       const cx = width / 2, cy = height / 2;
       for (const n of nodes) {
         n.vx += (cx - n.x) * 0.02 * alpha;
         n.vy += (cy - n.y) * 0.02 * alpha;
       }
 
-      // Integrate + decay
       for (const n of nodes) {
         n.vx *= 0.7; n.vy *= 0.7;
         n.x += n.vx; n.y += n.vy;
-        // Clamp
         n.x = Math.max(20, Math.min(width - 20, n.x));
         n.y = Math.max(20, Math.min(height - 20, n.y));
       }
@@ -165,8 +172,7 @@ export function useForceGraph(
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       simRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documents.length, relations.length, width, height]);
+  }, [docCount, relCount, width, height]);
 
   return state;
 }
