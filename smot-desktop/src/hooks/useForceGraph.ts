@@ -54,22 +54,12 @@ export function useForceGraph(
   const [state, setState] = useState<ForceGraphState>({ nodePositions: [], linkPositions: [] });
   const rafRef = useRef<number | null>(null);
   const simRef = useRef<{ nodes: SimNode[]; links: SimLink[]; alpha: number } | null>(null);
-  const docsRef = useRef(documents);
-  const relsRef = useRef(relations);
 
   useEffect(() => {
-    docsRef.current = documents;
-    relsRef.current = relations;
-  }, [documents, relations]);
+    if (!documents.length || width === 0 || height === 0) return;
 
-  const docCount = documents.length;
-  const relCount = relations.length;
-
-  useEffect(() => {
-    if (!docCount || width === 0 || height === 0) return;
-
-    const docs = docsRef.current;
-    const rels = relsRef.current;
+    const docs = documents;
+    const rels = relations;
 
     const connMap = new Map<string, number>();
     rels.forEach(r => {
@@ -172,7 +162,7 @@ export function useForceGraph(
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       simRef.current = null;
     };
-  }, [docCount, relCount, width, height]);
+  }, [documents, relations, width, height]);
 
   return state;
 }

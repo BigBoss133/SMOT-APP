@@ -23,6 +23,7 @@ import {
   getSystemStatus,
   updateMode,
 } from "./services/api";
+import { invoke, listen, isTauri } from "./services/tauri";
 import type { LicenseStatusType, ModeData, SystemStatus, ViewerDocument } from "./types";
 
 const fallbackModes: ModeData = {
@@ -83,30 +84,20 @@ export default function App() {
     };
 
     const setupListener = async () => {
-      try {
-        // @ts-ignore
-        if (window.__TAURI_INTERNALS__) {
-          const tauriEvent = await import("@tauri-apps/api/event");
-          unlisten = await tauriEvent.listen("first-launch", () => {
-            navigate("/onboarding");
-          });
-        }
-      } catch {
-        // Not in Tauri environment
-      }
+      if (!isTauri()) return;
+      unlisten = await listen("first-launch", () => {
+        navigate("/onboarding");
+      });
     };
 
     const checkLicense = async () => {
+      if (!isTauri()) return;
       try {
-        // @ts-ignore
-        if (window.__TAURI_INTERNALS__) {
-          const tauriCore = await import("@tauri-apps/api/core");
-          const info = await tauriCore.invoke<{ status: LicenseStatusType }>("get_license_status");
-          setLicenseStatus(info.status);
-          if (info.status === "blocked") {
-            setLicenseBlocked(true);
-            navigate("/license-blocked");
-          }
+        const info = await invoke<{ status: LicenseStatusType }>("get_license_status");
+        setLicenseStatus(info.status);
+        if (info.status === "blocked") {
+          setLicenseBlocked(true);
+          navigate("/license-blocked");
         }
       } catch {
         // Not in Tauri or license module not ready; use default

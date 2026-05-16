@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { invoke, getCurrentWindow, isTauri } from "../services/tauri";
 
 interface WindowControls {
   minimizeToTray: () => Promise<void>;
@@ -9,18 +10,13 @@ interface WindowControls {
 
 export function useWindowControls(): WindowControls {
   const minimizeToTray = useCallback(async () => {
+    if (!isTauri()) return;
     try {
-      // @ts-ignore
-      if (window.__TAURI_INTERNALS__) {
-        const tauriCore = await import("@tauri-apps/api/core");
-        await tauriCore.invoke("open_dev_tools");
-      }
+      await invoke("open_dev_tools");
     } catch {
       try {
-        // @ts-ignore
-        if (!window.__TAURI_INTERNALS__) return;
-        const { getCurrentWindow } = await import("@tauri-apps/api/window");
-        const win = getCurrentWindow();
+        const win = await getCurrentWindow();
+        if (!win) return;
         await win.hide();
       } catch {
         // Not in Tauri; no-op
@@ -29,11 +25,10 @@ export function useWindowControls(): WindowControls {
   }, []);
 
   const minimize = useCallback(async () => {
+    if (!isTauri()) return;
     try {
-      // @ts-ignore
-      if (!window.__TAURI_INTERNALS__) return;
-      const { getCurrentWindow } = await import("@tauri-apps/api/window");
-      const win = getCurrentWindow();
+      const win = await getCurrentWindow();
+      if (!win) return;
       await win.minimize();
     } catch {
       // Not in Tauri; no-op
@@ -41,11 +36,10 @@ export function useWindowControls(): WindowControls {
   }, []);
 
   const close = useCallback(async () => {
+    if (!isTauri()) return;
     try {
-      // @ts-ignore
-      if (!window.__TAURI_INTERNALS__) return;
-      const { getCurrentWindow } = await import("@tauri-apps/api/window");
-      const win = getCurrentWindow();
+      const win = await getCurrentWindow();
+      if (!win) return;
       await win.close();
     } catch {
       window.close();
@@ -53,11 +47,10 @@ export function useWindowControls(): WindowControls {
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
+    if (!isTauri()) return;
     try {
-      // @ts-ignore
-      if (!window.__TAURI_INTERNALS__) return;
-      const { getCurrentWindow } = await import(/* @vite-ignore */ "@tauri-apps/api/window");
-      const win = getCurrentWindow();
+      const win = await getCurrentWindow();
+      if (!win) return;
       const isFullscreen = await win.isFullscreen();
       if (isFullscreen) {
         await win.setFullscreen(false);

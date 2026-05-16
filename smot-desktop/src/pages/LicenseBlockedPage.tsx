@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ShieldAlert, Check, ExternalLink } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
+import { invoke, isTauri } from "../services/tauri";
 
 interface LicenseBlockedPageProps {
   onLicenseValidated?: () => void;
@@ -33,15 +34,15 @@ export default function LicenseBlockedPage({ onLicenseValidated }: LicenseBlocke
       return;
     }
     try {
-      // @ts-ignore
-      if (window.__TAURI_INTERNALS__) {
-        const tauriCore = await import("@tauri-apps/api/core");
-        const result = await tauriCore.invoke<{ valid: boolean }>("validate_license", { key: licenseKey });
-        if (result.valid) {
-          onLicenseValidated?.();
-        } else {
-          setError(t.license.invalidKey);
-        }
+      if (!isTauri()) {
+        setError(t.license.invalidKey);
+        return;
+      }
+      const result = await invoke<{ valid: boolean }>("validate_license", { key: licenseKey });
+      if (result.valid) {
+        onLicenseValidated?.();
+      } else {
+        setError(t.license.invalidKey);
       }
     } catch {
       setError(t.license.invalidKey);

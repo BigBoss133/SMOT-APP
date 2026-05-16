@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
-import { listen } from "@tauri-apps/api/event";
 import { Brain, Download, Trash2, AlertCircle } from "lucide-react";
+import { listen } from "../services/tauri";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
 import { useToast } from "../hooks/useToast";
@@ -76,8 +76,7 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
     };
 
     const setupListener = async () => {
-      unlisten = await listen("model-download-progress", (event) => {
-        const progress = event.payload as DownloadProgress;
+      unlisten = await listen<DownloadProgress>("model-download-progress", (progress) => {
         setDownloadProgress(progress);
         if (progress.status === "complete") {
           setDownloadingModel(null);
