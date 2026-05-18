@@ -83,22 +83,18 @@ export function useForceGraph(
 
     simRef.current = { nodes, links, alpha: 1 };
 
-    const nodeMap = () => {
-      const m = new Map<string, SimNode>();
-      nodes.forEach(n => m.set(n.id, n));
-      return m;
-    };
+    // Create node map once at start
+    const nodeMap = new Map<string, SimNode>();
+    nodes.forEach(n => nodeMap.set(n.id, n));
 
     const tick = () => {
       const sim = simRef.current;
       if (!sim || sim.alpha < 0.001) return;
-
-      const map = nodeMap();
       const alpha = sim.alpha;
 
       for (const link of sim.links) {
-        const s = typeof link.source === 'string' ? map.get(link.source)! : link.source as SimNode;
-        const t = typeof link.target === 'string' ? map.get(link.target)! : link.target as SimNode;
+        const s = typeof link.source === 'string' ? nodeMap.get(link.source)! : link.source as SimNode;
+        const t = typeof link.target === 'string' ? nodeMap.get(link.target)! : link.target as SimNode;
         if (!s || !t) continue;
         link.source = s;
         link.target = t;

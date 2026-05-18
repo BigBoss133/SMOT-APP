@@ -69,14 +69,16 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
+    let isActive = true;
 
     const fetchStatus = async () => {
       const status = await getOllamaStatus();
-      setOllamaStatus(status);
+      if (isActive) setOllamaStatus(status);
     };
 
     const setupListener = async () => {
       unlisten = await listen<DownloadProgress>("model-download-progress", (progress) => {
+        if (!isActive) return;
         setDownloadProgress(progress);
         if (progress.status === "complete") {
           setDownloadingModel(null);
@@ -88,7 +90,7 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
 
     const checkSpace = async () => {
       const hasSpace = await checkDiskSpace(5);
-      setLowDiskSpace(!hasSpace);
+      if (isActive) setLowDiskSpace(!hasSpace);
     };
 
     void fetchStatus();
@@ -96,6 +98,7 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
     void checkSpace();
 
     return () => {
+      isActive = false;
       if (unlisten) unlisten();
     };
   }, []);
