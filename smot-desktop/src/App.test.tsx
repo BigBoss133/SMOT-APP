@@ -5,7 +5,7 @@ import App from './App';
 import { LanguageProvider } from './context/LanguageContext';
 import { ToastProvider } from './context/ToastContext';
 import * as api from './services/api';
-import { vi, type Mock } from 'vitest';
+import { vi, describe, it, expect, beforeEach, beforeAll, type Mock } from 'vitest';
 
 // Mock dialog functions to avoid issues with ConfirmDialog
 beforeAll(() => {
@@ -22,7 +22,7 @@ vi.mock('./services/api', () => ({
   startIndexing: vi.fn(),
 }));
 
-const mockApi = api as {
+const mockApi = api as unknown as {
   getDocuments: Mock;
   getSystemStatus: Mock;
   getModes: Mock;
