@@ -68,11 +68,7 @@ mod tests {
     use super::*;
     use crate::system_probe::SystemProfile;
 
-    fn create_profile(
-        ram: f32,
-        gpu_vram: Option<f32>,
-        is_unified: bool,
-    ) -> SystemProfile {
+    fn create_profile(ram: f32, gpu_vram: Option<f32>, is_unified: bool) -> SystemProfile {
         SystemProfile {
             cpu_cores: 8,
             ram_total_gb: ram,

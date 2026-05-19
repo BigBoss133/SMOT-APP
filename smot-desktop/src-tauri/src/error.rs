@@ -1,5 +1,5 @@
 //! Unified error handling for SMOT application
-//! 
+//!
 //! Provides a single AppError enum that covers all error types in the application,
 //! with automatic conversion from external error types.
 
@@ -122,7 +122,9 @@ impl<T, E: Into<AppError>> Context<T> for Result<T, E> {
                 AppError::Parse(_) => AppError::Parse(format!("{} - {}", msg, app_err)),
                 AppError::Config(_) => AppError::Config(format!("{} - {}", msg, app_err)),
                 AppError::NotFound(_) => AppError::NotFound(format!("{} - {}", msg, app_err)),
-                AppError::Unauthorized(_) => AppError::Unauthorized(format!("{} - {}", msg, app_err)),
+                AppError::Unauthorized(_) => {
+                    AppError::Unauthorized(format!("{} - {}", msg, app_err))
+                }
                 AppError::External(_) => AppError::External(format!("{} - {}", msg, app_err)),
                 AppError::Validation(_) => AppError::Validation(format!("{} - {}", msg, app_err)),
             }

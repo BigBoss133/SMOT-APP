@@ -13,7 +13,7 @@ pub struct Config {
     pub first_launch: String,
     pub language: String,
     pub license: Option<String>,
-    }
+}
 
 #[allow(dead_code)]
 pub fn config_path(app: &tauri::App) -> Result<PathBuf, String> {
@@ -22,7 +22,9 @@ pub fn config_path(app: &tauri::App) -> Result<PathBuf, String> {
 }
 
 pub fn load_config_from_path(path: &PathBuf) -> Option<Config> {
-    fs::read_to_string(path).ok().and_then(|content| serde_json::from_str(&content).ok())
+    fs::read_to_string(path)
+        .ok()
+        .and_then(|content| serde_json::from_str(&content).ok())
 }
 
 pub fn save_config(path: &PathBuf, config: &Config) {
@@ -41,7 +43,10 @@ pub fn save_config(path: &PathBuf, config: &Config) {
 pub fn on_app_startup(app: &mut tauri::App) {
     let app_data_dir = match app.path().app_data_dir() {
         Ok(dir) => dir,
-        Err(e) => { log::error!("Failed to get app data dir: {}", e); return; }
+        Err(e) => {
+            log::error!("Failed to get app data dir: {}", e);
+            return;
+        }
     };
 
     for subdir in &["documents", "thumbnails", "logs"] {
@@ -52,7 +57,10 @@ pub fn on_app_startup(app: &mut tauri::App) {
 
     match crate::db::init_database(app.handle()) {
         Ok(db_path) => log::info!("SQLite inizializzato: {}", db_path.display()),
-        Err(e) => { log::error!("Failed to init database: {}", e); return; }
+        Err(e) => {
+            log::error!("Failed to init database: {}", e);
+            return;
+        }
     }
 
     let config_path = app_data_dir.join("config.json");
@@ -86,7 +94,10 @@ pub fn on_app_startup(app: &mut tauri::App) {
     let handle = app.handle().clone();
     let profile_json = match serde_json::to_value(&profile) {
         Ok(json) => json,
-        Err(e) => { log::error!("Failed to serialize profile: {}", e); return; }
+        Err(e) => {
+            log::error!("Failed to serialize profile: {}", e);
+            return;
+        }
     };
 
     tauri::async_runtime::spawn(async move {
@@ -105,10 +116,15 @@ pub fn load_config(app: &tauri::AppHandle) -> Option<Config> {
 
 #[tauri::command]
 pub fn complete_onboarding(app_handle: tauri::AppHandle) -> Result<(), String> {
-    let app_data_dir = app_handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?;
     let config_path = app_data_dir.join("config.json");
-    let content = fs::read_to_string(&config_path).map_err(|e| format!("Cannot read config: {}", e))?;
-    let mut config: Config = serde_json::from_str(&content).map_err(|e| format!("Cannot parse config: {}", e))?;
+    let content =
+        fs::read_to_string(&config_path).map_err(|e| format!("Cannot read config: {}", e))?;
+    let mut config: Config =
+        serde_json::from_str(&content).map_err(|e| format!("Cannot parse config: {}", e))?;
     config.onboarding_completed = true;
     save_config(&config_path, &config);
     log::info!("Onboarding completato!");
