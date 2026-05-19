@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeRelations } from './graphRelations';
-import { ViewerDocument } from '../types';
+import type { ViewerDocument } from '../types';
 
 describe('computeRelations', () => {
   it('should return empty array for less than 2 documents', () => {
