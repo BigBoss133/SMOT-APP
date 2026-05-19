@@ -11,7 +11,7 @@ use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use sysinfo::{Disks, System};
-use tauri::{Manager, menu::{MenuBuilder, MenuItemBuilder}, Runtime, tray::{TrayIconBuilder, MouseButton, MouseButtonState}};
+use tauri::Manager;
 
 pub struct AppState {
   active_mode: Mutex<String>,
@@ -713,7 +713,7 @@ let state = AppState {
         for _ in 0..(32 * 32) {
           rgba.extend_from_slice(&pixel);
         }
-        tauri::image::Image::new(&rgba, 32, 32)
+        tauri::image::Image::new_owned(rgba, 32, 32)
       });
 
       let _tray = tauri::tray::TrayIconBuilder::new()
