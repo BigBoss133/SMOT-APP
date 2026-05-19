@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 interface WindowControls {
   minimizeToTray: () => Promise<void>;
@@ -10,7 +11,6 @@ interface WindowControls {
 export function useWindowControls(): WindowControls {
   const minimizeToTray = useCallback(async () => {
     try {
-      const { invoke } = await import("@tauri-apps/api/core");
       await invoke("minimize_to_tray");
     } catch {
       try {

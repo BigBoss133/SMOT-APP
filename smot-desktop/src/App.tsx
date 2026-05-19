@@ -1,6 +1,7 @@
 import { Languages, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LicenseBanner } from "./components/LicenseBanner";
@@ -91,7 +92,6 @@ export default function App() {
 
     const checkLicense = async () => {
       try {
-        const { invoke } = await import("@tauri-apps/api/core");
         const info = await invoke<{ status: LicenseStatusType }>("get_license_status");
         setLicenseStatus(info.status);
         if (info.status === "blocked") {

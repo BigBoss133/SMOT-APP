@@ -54,17 +54,21 @@ export function useForceGraph(
   const [state, setState] = useState<ForceGraphState>({ nodePositions: [], linkPositions: [] });
   const rafRef = useRef<number | null>(null);
   const simRef = useRef<{ nodes: SimNode[]; links: SimLink[]; alpha: number } | null>(null);
+  const documentsRef = useRef(documents);
+  const relationsRef = useRef(relations);
+  useEffect(() => { documentsRef.current = documents; });
+  useEffect(() => { relationsRef.current = relations; });
 
   useEffect(() => {
-    if (!documents.length || width === 0 || height === 0) return;
+    if (!documentsRef.current.length || width === 0 || height === 0) return;
 
     const connMap = new Map<string, number>();
-    relations.forEach(r => {
+    relationsRef.current.forEach(r => {
       connMap.set(r.source, (connMap.get(r.source) ?? 0) + 1);
       connMap.set(r.target, (connMap.get(r.target) ?? 0) + 1);
     });
 
-    const nodes: SimNode[] = documents.map(doc => ({
+    const nodes: SimNode[] = documentsRef.current.map(doc => ({
       id: doc.id,
       x: width / 2 + (Math.random() - 0.5) * 200,
       y: height / 2 + (Math.random() - 0.5) * 200,
@@ -73,7 +77,7 @@ export function useForceGraph(
       size: Math.min(doc.size_kb / 1000, 4),
     }));
 
-    const links: SimLink[] = relations.map(r => ({
+    const links: SimLink[] = relationsRef.current.map(r => ({
       source: r.source, target: r.target,
       strength: r.strength, type: r.type,
     }));

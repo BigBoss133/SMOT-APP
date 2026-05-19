@@ -52,6 +52,10 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
   const [downloadingModel, setDownloadingModel] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [lowDiskSpace, setLowDiskSpace] = useState(false);
+  const textRef = useRef(text);
+  const toastRef = useRef(toast);
+  useEffect(() => { textRef.current = text; });
+  useEffect(() => { toastRef.current = toast; });
 
   const availableModels = [
     { id: "llama3.2:3b", name: "Llama 3.2 3B", size: "1.8 GB" },
@@ -73,7 +77,7 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
         setDownloadProgress(progress);
         if (progress.status === "complete") {
           setDownloadingModel(null);
-          toast.success(text.modelDownloaded);
+          toastRef.current.success(textRef.current.modelDownloaded);
           void fetchStatus();
         }
       });
