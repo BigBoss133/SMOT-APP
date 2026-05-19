@@ -49,7 +49,8 @@ pub fn probe_system() -> SystemProfile {
     }
 }
 
-fn detect_gpu(_total_ram_gb: f32) -> (Option<String>, Option<f32>, bool, bool) {
+#[allow(unused_variables)]
+fn detect_gpu(total_ram_gb: f32) -> (Option<String>, Option<f32>, bool, bool) {
     #[cfg(target_os = "linux")]
     {
         if let Ok(output) = std::process::Command::new("lspci")

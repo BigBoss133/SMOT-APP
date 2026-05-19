@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "../services/tauri";
 
 export interface OllamaStatus {
   installed: boolean;

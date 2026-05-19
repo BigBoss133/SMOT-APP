@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "../services/tauri";
 import type {
   ChatResponse,
   IndexingStatus,
@@ -9,12 +9,6 @@ import type {
   ViewerDocument,
   ViewerPageData,
 } from "../types";
-
-const isTauriRuntime = () => {
-  if (typeof window === "undefined") return false;
-  const globalWindow = window as unknown as Record<string, unknown>;
-  return Boolean(globalWindow.__TAURI_INTERNALS__);
-};
 
 const defaultDocs: ViewerDocument[] = [
   {
@@ -56,7 +50,7 @@ const runFallback = async <T>(
   fallback: () => Promise<T> | T,
   args?: Record<string, unknown>
 ) => {
-  if (isTauriRuntime()) {
+  if (isTauri()) {
     try {
       return await invoke<T>(command, args);
     } catch {

@@ -1,14 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { listen } from "@tauri-apps/api/event";
-import { ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
+import { ChevronLeft, ChevronRight, SkipForward, Archive } from "lucide-react";
 import { WizardProgress } from "../components/onboarding/WizardProgress";
 import { SystemDiscoveryStep } from "../components/onboarding/SystemDiscoveryStep";
 import { LicenseStep } from "../components/onboarding/LicenseStep";
 import { ModelDownloadStep } from "../components/onboarding/ModelDownloadStep";
 import { FirstDocumentStep } from "../components/onboarding/FirstDocumentStep";
 import { CompletionStep } from "../components/onboarding/CompletionStep";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, listen } from "../services/tauri";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
 import { useToast } from "../context/ToastContext";
@@ -47,8 +46,7 @@ export default function OnboardingPage() {
 
     const setupListener = async () => {
       try {
-        unlisten = await listen("first-launch", (event) => {
-          const payload = event.payload as SystemProfile & { tier: string };
+        unlisten = await listen<SystemProfile & { tier: string }>("first-launch", (payload) => {
           if (payload && payload.cpu_cores) {
             setSystemProfile(payload);
             setTier(payload.tier);
@@ -214,6 +212,12 @@ export default function OnboardingPage() {
   return (
     <div style={styles.page}>
       <div style={styles.container}>
+        <div style={styles.logoHeader}>
+          <div style={styles.logoIcon}>
+            <Archive size={28} />
+          </div>
+          <span style={styles.logoText}>SMOT</span>
+        </div>
         <WizardProgress currentStep={currentStep} totalSteps={5} labels={stepLabels} />
 
         <div style={styles.content}>
@@ -290,6 +294,29 @@ export default function OnboardingPage() {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
+  },
+  logoHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "32px",
+  },
+  logoIcon: {
+    width: "48px",
+    height: "48px",
+    background: "linear-gradient(135deg, #4338f5 0%, #894df8 100%)",
+    borderRadius: "12px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#ffffff",
+    boxShadow: "0 4px 15px rgba(67, 56, 245, 0.4)",
+  },
+  logoText: {
+    fontSize: "1.75rem",
+    fontWeight: 700,
+    color: "#ffffff",
+    letterSpacing: "0.5px",
   },
   content: {
     width: "100%",

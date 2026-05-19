@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Download, Brain, Search } from "lucide-react";
 
 interface Model {
@@ -46,6 +46,16 @@ export function ModelDownloadStep({ tier, onSkip, t }: ModelDownloadStepProps) {
   const [downloadingModels, setDownloadingModels] = useState<Set<string>>(new Set());
   const [completedModels, setCompletedModels] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState<Record<string, number>>({});
+  const onSkipRef = useRef(onSkip);
+  useEffect(() => {
+    onSkipRef.current = onSkip;
+  });
+
+  useEffect(() => {
+    if (completedModels.size === models.length) {
+      onSkipRef.current();
+    }
+  }, [completedModels]);
 
   const handleDownload = (modelId: string) => {
     if (downloadingModels.has(modelId) || completedModels.has(modelId)) return;

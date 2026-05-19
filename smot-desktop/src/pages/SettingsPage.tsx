@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
-import { listen } from "@tauri-apps/api/event";
 import { Brain, Download, Trash2, AlertCircle } from "lucide-react";
+import { listen } from "../services/tauri";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
 import { useToast } from "../hooks/useToast";
@@ -63,17 +63,26 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
     { id: "nomic-embed-text", name: "Nomic Embed Text", size: "274 MB" },
   ];
 
+  const textRef = useRef(text);
+  const toastRef = useRef(toast);
+
+  useEffect(() => {
+    textRef.current = text;
+    toastRef.current = toast;
+  }, [text, toast]);
+
   useEffect(() => {
     let unlisten: (() => void) | undefined;
+    let isActive = true;
 
     const fetchStatus = async () => {
       const status = await getOllamaStatus();
-      setOllamaStatus(status);
+      if (isActive) setOllamaStatus(status);
     };
 
     const setupListener = async () => {
-      unlisten = await listen("model-download-progress", (event) => {
-        const progress = event.payload as DownloadProgress;
+      unlisten = await listen<DownloadProgress>("model-download-progress", (progress) => {
+        if (!isActive) return;
         setDownloadProgress(progress);
         if (progress.status === "complete") {
           setDownloadingModel(null);
@@ -85,7 +94,7 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
 
     const checkSpace = async () => {
       const hasSpace = await checkDiskSpace(5);
-      setLowDiskSpace(!hasSpace);
+      if (isActive) setLowDiskSpace(!hasSpace);
     };
 
     void fetchStatus();
@@ -93,6 +102,7 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
     void checkSpace();
 
     return () => {
+      isActive = false;
       if (unlisten) unlisten();
     };
   }, []);
@@ -394,7 +404,6 @@ const isModelInstalled = (modelId: string) => {
         confirmLabel={text.deleteModel}
         confirmVariant="danger"
         onConfirm={() => {
-          // TODO: wire to actual model deletion API when available
           setModelToDelete(null);
         }}
         onCancel={() => setModelToDelete(null)}

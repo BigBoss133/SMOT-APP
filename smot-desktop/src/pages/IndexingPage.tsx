@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { listen } from "@tauri-apps/api/event";
+import { listen } from "../services/tauri";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
 import {
@@ -45,8 +45,7 @@ export default function IndexingPage({ onStatusUpdate }: IndexingPageProps) {
     };
 
     const setupRealtime = async () => {
-      unlisten = await listen("indexing-progress", (event) => {
-        const payload = event.payload as IndexingStatus;
+      unlisten = await listen<IndexingStatus>("indexing-progress", (payload) => {
         setStatus(payload);
         onStatusUpdate(payload);
       });

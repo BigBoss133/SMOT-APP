@@ -62,6 +62,9 @@ export function useForceGraph(
   useEffect(() => {
     if (!documentsRef.current.length || width === 0 || height === 0) return;
 
+    const docs = documents;
+    const rels = relations;
+
     const connMap = new Map<string, number>();
     relationsRef.current.forEach(r => {
       connMap.set(r.source, (connMap.get(r.source) ?? 0) + 1);
@@ -84,25 +87,19 @@ export function useForceGraph(
 
     simRef.current = { nodes, links, alpha: 1 };
 
-    const nodeMap = () => {
-      const m = new Map<string, SimNode>();
-      nodes.forEach(n => m.set(n.id, n));
-      return m;
-    };
+    // Create node map once at start
+    const nodeMap = new Map<string, SimNode>();
+    nodes.forEach(n => nodeMap.set(n.id, n));
 
     const tick = () => {
       const sim = simRef.current;
       if (!sim || sim.alpha < 0.001) return;
-
-      const map = nodeMap();
       const alpha = sim.alpha;
 
-      // Link force
       for (const link of sim.links) {
-        const s = typeof link.source === 'string' ? map.get(link.source)! : link.source as SimNode;
-        const t = typeof link.target === 'string' ? map.get(link.target)! : link.target as SimNode;
+        const s = typeof link.source === 'string' ? nodeMap.get(link.source)! : link.source as SimNode;
+        const t = typeof link.target === 'string' ? nodeMap.get(link.target)! : link.target as SimNode;
         if (!s || !t) continue;
-        // Resolve source/target to objects after first tick
         link.source = s;
         link.target = t;
         const dx = (t.x - s.x) || 0.01;
@@ -114,7 +111,6 @@ export function useForceGraph(
         t.vx -= dx * force; t.vy -= dy * force;
       }
 
-      // Many-body (repulsion)
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           const a = nodes[i], b = nodes[j];
@@ -128,18 +124,15 @@ export function useForceGraph(
         }
       }
 
-      // Center force
       const cx = width / 2, cy = height / 2;
       for (const n of nodes) {
         n.vx += (cx - n.x) * 0.02 * alpha;
         n.vy += (cy - n.y) * 0.02 * alpha;
       }
 
-      // Integrate + decay
       for (const n of nodes) {
         n.vx *= 0.7; n.vy *= 0.7;
         n.x += n.vx; n.y += n.vy;
-        // Clamp
         n.x = Math.max(20, Math.min(width - 20, n.x));
         n.y = Math.max(20, Math.min(height - 20, n.y));
       }
@@ -169,7 +162,7 @@ export function useForceGraph(
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       simRef.current = null;
     };
-  }, [documents.length, relations.length, width, height]);
+  }, [documents, relations, width, height]);
 
   return state;
 }

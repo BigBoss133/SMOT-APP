@@ -1,4 +1,4 @@
-# SMOT — Code Signing & Notarization Guide
+# SMOT — Code Signing, Notarization & Onboarding Guide
 
 ## INS-19: Windows Code Signing
 
@@ -74,3 +74,59 @@ Add to `build-windows.yml`:
 - [ ] Database vacuum on first launch
 - [ ] Service worker for offline caching
 - [ ] Model download resume support
+
+---
+
+## Onboarding & Licenze (Beta)
+
+### Flusso Onboarding (Primo Avvio)
+
+L'app esegue il wizard onboarding automaticamente al primo avvio (`isOnboarding` in App.tsx):
+
+```
+1. System Discovery  → auto_config.rs rileva CPU/RAM/GPU → assegna tier
+2. Welcome           → messaggio personalizzato in base al tier
+3. Licenza / Trial   → LicenseStep.tsx — input chiave o prova gratuita
+4. Primo documento   → drop zone per caricare PDF/DOCX/TXT
+5. Completo!          → CompletionStep.tsx — confetti + riepilogo
+```
+
+### Sistema Licenze
+
+| Componente | File | Descrizione |
+|-----------|------|-------------|
+| LicenseBlockedPage | `src/pages/LicenseBlockedPage.tsx` | Blocco app se licenza scaduta |
+| LicenseBanner | `src/components/LicenseBanner.tsx` | Banner periodo grazia |
+| LicenseStep | `src/components/onboarding/LicenseStep.tsx` | Step licenza nel wizard |
+| get_license_status | `src-tauri/src/lib.rs` | Comando Rust: ritorna `active`/`trial` |
+| validate_license | `src-tauri/src/lib.rs` | Comando Rust: valida formato chiave |
+
+### Trial 7 Giorni
+
+- Nessuna carta di credito richiesta
+- Tutte le funzionalità sbloccate per 7 giorni dal primo avvio
+- Alla scadenza: downgrade a Essential (solo ricerca FTS5, 500 documenti)
+- Configurazione salvata in `config.json` (non in cloud)
+
+### Tier Hardware
+
+| Tier | RAM | GPU | Modello AI | Indice |
+|------|-----|-----|-----------|--------|
+| Premium | 16GB+ | CUDA/Metal | Llama 3.2 7B | Parallelo |
+| Standard | 8-16GB | - | Llama 3.2 3B | Moderato |
+| Essential | 4-8GB | - | Nessun AI | Singolo |
+| Minimal | <4GB | - | Solo viewer | Nessuno |
+
+### Test Manuale
+
+```bash
+# Forzare onboarding al prossimo avvio (cancellare stato)
+rm ~/.config/smot/config.json
+# Oppure modificare: "onboarding_completed": true → false
+
+# Test licenza da terminale
+cd src-tauri && cargo run -- validate-license SMOT-PREMIUM-AAAA-BBBB-CCCC
+
+# Verificare traduzioni IT/EN in i18n/translations.ts
+grep -n "license\|onboarding\|trial\|welcome" src/i18n/translations.ts
+```

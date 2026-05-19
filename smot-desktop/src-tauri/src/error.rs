@@ -99,9 +99,11 @@ impl From<AppError> for String {
 }
 
 /// Result type alias for app operations
+#[allow(dead_code)]
 pub type AppResult<T> = Result<T, AppError>;
 
 /// Helper trait for adding context to errors
+#[allow(dead_code)]
 pub trait Context<T> {
     fn context(self, msg: &str) -> AppResult<T>;
 }

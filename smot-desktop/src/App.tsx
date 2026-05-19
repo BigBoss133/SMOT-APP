@@ -25,6 +25,7 @@ import {
   getSystemStatus,
   updateMode,
 } from "./services/api";
+import { invoke, listen, isTauri } from "./services/tauri";
 import type { LicenseStatusType, ModeData, SystemStatus, ViewerDocument } from "./types";
 
 const fallbackModes: ModeData = {
@@ -85,12 +86,14 @@ export default function App() {
     };
 
     const setupListener = async () => {
+      if (!isTauri()) return;
       unlisten = await listen("first-launch", () => {
         navigate("/onboarding");
       });
     };
 
     const checkLicense = async () => {
+      if (!isTauri()) return;
       try {
         const info = await invoke<{ status: LicenseStatusType }>("get_license_status");
         setLicenseStatus(info.status);
