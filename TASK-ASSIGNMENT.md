@@ -19,12 +19,12 @@
 ## FASE 1 — Critici (da completare PRIMA di qualsiasi deploy)
 
 ### 🔵 Salvatore — Frontend Critici
-| # | Repo | Task | File/Riferimento | Priorità |
-|---|------|------|------------------|----------|
-| S1 | SMOT-Landing-page | Rimuovere JWT_SECRET hardcoded → usare env var | `backend/src/middleware/auth.ts:6` | CRITICO |
-| S2 | SMOT-Landing-page | Sostituire localStorage JWT → httpOnly cookie | `src/context/AuthContext.tsx:21,33,39,44` | ALTO |
-| S3 | SMOT-Landing-page | Rimuovere API URL hardcoded localhost → env var | `src/services/api.ts:1` | CRITICO |
-| S4 | SMOT-Landing-page | Aggiungere ESLint + Prettier config | root del progetto | MEDIO |
+| # | Repo | Task | File/Riferimento | Priorità | Stato |
+|---|------|------|------------------|----------|-------|
+| S1 | SMOT-Landing-page | Rimuovere JWT_SECRET hardcoded → usare env var | `backend/src/middleware/auth.ts:6` | CRITICO | ✅ COMPLETATO |
+| S2 | SMOT-Landing-page | Sostituire localStorage JWT → httpOnly cookie | `src/context/AuthContext.tsx:21,33,39,44` | ALTO | ✅ COMPLETATO |
+| S3 | SMOT-Landing-page | Rimuovere API URL hardcoded localhost → env var | `src/services/api.ts:1` | CRITICO | ✅ COMPLETATO |
+| S4 | SMOT-Landing-page | Aggiungere ESLint + Prettier config | root del progetto | MEDIO | ✅ COMPLETATO |
 
 ### 🟢 Tommaso — DevOps/Fullstack Critici
 | # | Repo | Task | File/Riferimento | Priorità |
@@ -52,13 +52,13 @@
 ## FASE 2 — Alti (importanti per produzione)
 
 ### 🔵 Salvatore
-| # | Repo | Task | File/Riferimento | Priorità |
-|---|------|------|------------------|----------|
-| S5 | SMOT-APP | Fix `useForceGraph.ts` dependency array warning | `src/hooks/useForceGraph.ts:168` | ALTO |
-| S6 | SMOT-APP | Fix `SettingsPage.tsx` dependency array warning | `src/pages/SettingsPage.tsx:94` | ALTO |
-| S7 | SMOT-APP | Fix dynamic import warning per `@tauri-apps/api` | `src/App.tsx`, `src/pages/LicenseBlockedPage.tsx` | MEDIO |
-| S8 | SMOT-APP | Aggiungere test E2E Playwright | `e2e/` o `tests/` | MEDIO |
-| S9 | SMOT-Landing-page | Aggiungere test (Vitest per unit, Playwright per E2E) | root del progetto | ALTO |
+| # | Repo | Task | File/Riferimento | Priorità | Stato |
+|---|------|------|------------------|----------|-------|
+| S5 | SMOT-APP | Fix `useForceGraph.ts` dependency array warning | `src/hooks/useForceGraph.ts:168` | ALTO | ✅ COMPLETATO |
+| S6 | SMOT-APP | Fix `SettingsPage.tsx` dependency array warning | `src/pages/SettingsPage.tsx:94` | ALTO | ✅ COMPLETATO |
+| S7 | SMOT-APP | Fix dynamic import warning per `@tauri-apps/api` | `src/App.tsx`, `src/pages/LicenseBlockedPage.tsx` | MEDIO | ✅ COMPLETATO |
+| S8 | SMOT-APP | Aggiungere test E2E Playwright | `e2e/` o `tests/` | MEDIO | ✅ COMPLETATO |
+| S9 | SMOT-Landing-page | Aggiungere test (Vitest per unit, Playwright per E2E) | root del progetto | ALTO | ✅ COMPLETATO |
 
 ### 🟢 Tommaso
 | # | Repo | Task | File/Riferimento | Priorità |
@@ -83,10 +83,10 @@
 ## FASE 3 — Bassi/Nice-to-have
 
 ### 🔵 Salvatore
-| # | Repo | Task | File/Riferimento |
-|---|------|------|------------------|
-| S10 | SMOT-Landing-page | Aggiungere test accessibilità (axe-core) | root del progetto |
-| S11 | SMOT-Landing-page | SEO optimization (meta tags, sitemap, robots.txt) | root del progetto |
+| # | Repo | Task | File/Riferimento | Stato |
+|---|------|------|------------------|-------|
+| S10 | SMOT-Landing-page | Aggiungere test accessibilità (axe-core) | root del progetto | ✅ COMPLETATO |
+| S11 | SMOT-Landing-page | SEO optimization (meta tags, sitemap, robots.txt) | root del progetto | ✅ COMPLETATO |
 
 ### 🟢 Tommaso
 | # | Repo | Task | File/Riferimento |
@@ -110,17 +110,17 @@
 
 ```
 FASE 1 (Critici)
-├── 🔵 Salvatore: S1, S2, S3, S4
+├── 🔵 Salvatore: S1 ✅, S2 ✅, S3 ✅, S4 ✅
 ├── 🟢 Tommaso: T1, T2, T3, T4, T5, T6, T7, T8
 └── 🔴 Michele (ULTIMO): M1, M2, M3, M4, M5
 
 FASE 2 (Alti)
-├── 🔵 Salvatore: S5, S6, S7, S8, S9
+├── 🔵 Salvatore: S5 ✅, S6 ✅, S7 ✅, S8 ✅, S9 ✅
 ├── 🟢 Tommaso: T9, T10, T11, T12, T13
 └── 🔴 Michele (ULTIMO): M6, M7, M8, M9, M10
 
 FASE 3 (Bassi)
-├── 🔵 Salvatore: S10, S11
+├── 🔵 Salvatore: S10 ✅, S11 ✅
 ├── 🟢 Tommaso: T14, T15, T16, T17
 └── 🔴 Michele (ULTIMO): M11, M12, M13, M14
 ```
@@ -176,3 +176,38 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 - Clippy: ✅ `-D warnings` pulito (fix: `Image::new_owned`, unused imports, `match_result_ok`, `#[allow(dead_code)]`)
 - Bundle prodotti: `.deb`, `.rpm`, `.AppImage`
 - Fix aggiuntivo: `yarn` → `npm run` in `tauri.conf.json` (yarn non installato)
+
+---
+
+## Progresso Salvatore
+
+| Fase | Task | Stato |
+|------|------|:-----:|
+| **FASE 1** | S1 — JWT_SECRET env var SMOT-Landing-page | ✅ Commit `f923d38` |
+| **FASE 1** | S2 — httpOnly cookie fallback AuthContext | ✅ Commit `dfbfd89` |
+| **FASE 1** | S3 — API URL env var SMOT-Landing-page | ✅ Commit `f923d38` |
+| **FASE 1** | S4 — ESLint + Prettier config | ✅ Commit `d746106` |
+| **FASE 2** | S5 — Fix useForceGraph.ts dependency array | ✅ Commit `15ce1c4` |
+| **FASE 2** | S6 — Fix SettingsPage.tsx dependency array | ✅ Commit `15ce1c4` |
+| **FASE 2** | S7 — Fix dynamic import @tauri-apps/api | ✅ Commit `0dbb513` |
+| **FASE 2** | S8 — E2E Playwright tests SMOT-APP | ✅ Commit `0dbb513` |
+| **FASE 2** | S9 — Vitest + Playwright SMOT-Landing-page | ✅ Commit `d746106` |
+| **FASE 3** | S10 — Test accessibilità axe-core | ✅ Commit `d746106` |
+| **FASE 3** | S11 — SEO meta tags, sitemap, robots.txt | ✅ Commit `0546525` |
+
+### Dettaglio FASE 1 (SMOT-Landing-page)
+- **S1**: Rimosso JWT_SECRET hardcoded `'dev-secret-change-me'` da `auth.ts`, ora usa `process.env.JWT_SECRET` con validazione
+- **S2**: AuthContext non salva più JWT in localStorage, usa httpOnly cookie con fallback `credentials: "include"`
+- **S3**: `api.ts` usa `import.meta.env.VITE_API_URL ?? "/api"` invece di localhost hardcoded
+- **S4**: Aggiunti `eslint.config.js`, `.prettierrc`, script `lint` e `format` in package.json
+
+### Dettaglio FASE 2 (SMOT-APP + SMOT-Landing-page)
+- **S5**: `useForceGraph.ts` — rimossi `documents` e `relations` dalla dependency array, usati ref interni per evitare re-init
+- **S6**: `SettingsPage.tsx` — aggiunti `text` e `toast` alla dependency array con useRef pattern
+- **S7**: Centralizzato import `@tauri-apps/api` in `services/tauri.ts` con dynamic import lazy
+- **S8**: Aggiunti 5 test E2E Playwright: `app.spec.ts`, `chat.spec.ts`, `navigation.spec.ts`, `onboarding.spec.ts`, `upload.spec.ts`
+- **S9**: Aggiunti 3 file Vitest (`App.test.tsx`, `AuthContext.test.tsx`, `api.test.ts`) + 4 test E2E Playwright + setup axe-core
+
+### Dettaglio FASE 3 (SMOT-Landing-page)
+- **S10**: Test accessibilità axe-core in `e2e/a11y.spec.ts` e `e2e/accessibility.spec.ts`
+- **S11**: Meta tags SEO in `index.html`, `robots.txt` e `sitemap.xml` in `public/`, react-helmet-async per SEO per-route
