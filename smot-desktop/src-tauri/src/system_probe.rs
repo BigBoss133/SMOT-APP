@@ -26,7 +26,9 @@ pub fn probe_system() -> SystemProfile {
         "{} {}",
         System::name().unwrap_or_else(|| "Unknown".to_string()),
         System::os_version().unwrap_or_default()
-    ).trim().to_string();
+    )
+    .trim()
+    .to_string();
 
     let disks = Disks::new_with_refreshed_list();
     let disk_free_gb = disks
@@ -53,10 +55,7 @@ pub fn probe_system() -> SystemProfile {
 fn detect_gpu(total_ram_gb: f32) -> (Option<String>, Option<f32>, bool, bool) {
     #[cfg(target_os = "linux")]
     {
-        if let Ok(output) = std::process::Command::new("lspci")
-            .arg("-v")
-            .output()
-        {
+        if let Ok(output) = std::process::Command::new("lspci").arg("-v").output() {
             let stdout = String::from_utf8_lossy(&output.stdout);
             for line in stdout.lines() {
                 if line.contains("VGA") || line.contains("3D") {
@@ -82,7 +81,8 @@ fn detect_gpu(total_ram_gb: f32) -> (Option<String>, Option<f32>, bool, bool) {
                 if parts.len() >= 2 {
                     let name = parts[..parts.len() - 1].join(" ");
                     let cuda = name.to_lowercase().contains("nvidia");
-                    let vram = parts.last()
+                    let vram = parts
+                        .last()
                         .and_then(|s| s.parse::<f32>().ok())
                         .map(|b| b / (1024.0 * 1024.0 * 1024.0));
                     return (Some(name), vram, cuda, false);
@@ -110,7 +110,9 @@ fn detect_gpu(total_ram_gb: f32) -> (Option<String>, Option<f32>, bool, bool) {
                 }
                 if line.contains("VRAM") {
                     if let Some(vram_str) = line.split(": ").last() {
-                        if let Some(mb) = vram_str.split_whitespace().next()
+                        if let Some(mb) = vram_str
+                            .split_whitespace()
+                            .next()
                             .and_then(|s| s.parse::<f32>().ok())
                         {
                             vram = Some(mb / 1024.0);
@@ -139,10 +141,57 @@ fn detect_nvidia_vram() -> Option<f32> {
         .output()
     {
         let stdout = String::from_utf8_lossy(&output.stdout);
-        stdout.lines().next()
+        stdout
+            .lines()
+            .next()
             .and_then(|s| s.trim().parse::<f32>().ok())
             .map(|mb| mb / 1024.0)
     } else {
         None
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_probe_system_returns_valid_data() {
+        let profile = probe_system();
+
+        // System should have at least 1 CPU core
+        assert!(profile.cpu_cores > 0, "CPU cores should be greater than 0");
+
+        // Total RAM should be positive
+        assert!(
+            profile.ram_total_gb > 0.0,
+            "Total RAM should be greater than 0"
+        );
+
+        // Available RAM should be >= 0 and <= total RAM (allowing some slight floating point inaccuracies if any)
+        assert!(
+            profile.ram_available_gb >= 0.0,
+            "Available RAM should be >= 0"
+        );
+        // Sometimes available could technically report slightly higher due to caching/buffering quirks in some OS, but generally <= total
+        assert!(
+            profile.ram_available_gb <= profile.ram_total_gb * 1.1,
+            "Available RAM should not exceed total RAM significantly"
+        );
+
+        // Disk free space should be >= 0
+        assert!(
+            profile.disk_free_gb >= 0.0,
+            "Disk free space should be >= 0"
+        );
+
+        // OS name shouldn't be completely empty string
+        assert!(!profile.os_name.is_empty(), "OS name should not be empty");
+
+        // We can't strictly assert GPU details since CI runners might not have a GPU,
+        // but we can ensure it ran without panicking.
+        // If gpu_vram_gb is Some, it should be >= 0.0
+        if let Some(vram) = profile.gpu_vram_gb {
+            assert!(vram >= 0.0, "GPU VRAM should be >= 0 if present");
+        }
     }
 }
