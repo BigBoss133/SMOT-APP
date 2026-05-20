@@ -1,3 +1,5 @@
+use r2d2::Pool;
+use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::Connection;
 use serde::Serialize;
 use std::sync::{
@@ -9,6 +11,8 @@ use tauri::{AppHandle, Emitter, Manager};
 
 const CHUNK_SIZE_CHARS: usize = 2000;
 const CHUNK_OVERLAP_CHARS: usize = 200;
+const MAX_EMBEDDING_RETRIES: u32 = 3;
+const EMBEDDING_CONCURRENCY: usize = 3;
 
 #[derive(Clone, Serialize)]
 pub struct IndexingProgress {
@@ -115,23 +119,57 @@ pub fn chunk_text(text: &str) -> Vec<String> {
 }
 
 async fn get_embedding(client: &reqwest::Client, text: &str) -> Result<Vec<f32>, String> {
-    let resp = client
-        .post("http://localhost:11434/api/embeddings")
-        .json(&EmbeddingsRequest {
-            model: "nomic-embed-text".to_string(),
-            prompt: text.to_string(),
-        })
-        .timeout(Duration::from_secs(60))
-        .send()
-        .await
-        .map_err(|e| format!("Ollama embeddings request failed: {}", e))?;
+    let mut attempt = 0;
+    loop {
+        attempt += 1;
+        let result = client
+            .post("http://localhost:11434/api/embeddings")
+            .json(&EmbeddingsRequest {
+                model: "nomic-embed-text".to_string(),
+                prompt: text.to_string(),
+            })
+            .timeout(Duration::from_secs(60))
+            .send()
+            .await;
 
-    let body: EmbeddingsResponse = resp
-        .json()
-        .await
-        .map_err(|e| format!("Ollama embeddings parse error: {}", e))?;
+        match result {
+            Ok(resp) => {
+                let body: Result<EmbeddingsResponse, _> = resp.json().await;
+                match body {
+                    Ok(embeddings) => return Ok(embeddings.embedding),
+                    Err(e) => {
+                        if attempt >= MAX_EMBEDDING_RETRIES {
+                            return Err(format!("Ollama embeddings parse error after {} retries: {}", attempt, e));
+                        }
+                        let delay = Duration::from_secs(1 << (attempt - 1));
+                        tracing::warn!(attempt, delay_secs = delay.as_secs(), "Embedding parse error, retrying");
+                        tokio::time::sleep(delay).await;
+                    }
+                }
+            }
+            Err(e) => {
+                if attempt >= MAX_EMBEDDING_RETRIES {
+                    return Err(format!("Ollama embeddings request failed after {} retries: {}", attempt, e));
+                }
+                let delay = Duration::from_secs(1 << (attempt - 1));
+                tracing::warn!(attempt, delay_secs = delay.as_secs(), "Embedding request failed, retrying");
+                tokio::time::sleep(delay).await;
+            }
+        }
+    }
+}
 
-    Ok(body.embedding)
+async fn get_embeddings_concurrent(client: &reqwest::Client, chunks: &[String]) -> Vec<Option<Vec<f32>>> {
+    let mut results = vec![None; chunks.len()];
+    for batch in chunks.chunks(EMBEDDING_CONCURRENCY) {
+        let futures: Vec<_> = batch.iter().map(|c| get_embedding(client, c)).collect();
+        let batch_results = futures::future::join_all(futures).await;
+        let offset = results.len().saturating_sub(chunks.len());
+        for (i, res) in batch_results.into_iter().enumerate() {
+            results[offset + i] = res.ok();
+        }
+    }
+    results
 }
 
 fn embedding_to_blob(embedding: &[f32]) -> Vec<u8> {
@@ -186,19 +224,19 @@ pub fn query_documents(
 pub async fn start_indexing(
     app_handle: AppHandle,
     controller: Arc<IndexingController>,
-    db: Arc<Mutex<Connection>>,
+    pool: Pool<SqliteConnectionManager>,
     client: reqwest::Client,
     document_ids: Option<Vec<String>>,
 ) {
     let start_time = std::time::Instant::now();
 
     let documents: Vec<(String, String, String)> = {
-        let conn = match db.lock() {
+        let conn = match pool.get() {
             Ok(c) => c,
             Err(e) => {
                 let mut st = controller.state.lock().unwrap_or_else(|e| e.into_inner());
                 st.status = "error".to_string();
-                st.error = Some(format!("DB lock error: {}", e));
+                st.error = Some(format!("DB pool error: {}", e));
                 return;
             }
         };
@@ -312,7 +350,10 @@ pub async fn start_indexing(
         };
 
         if parsed.text.trim().is_empty() {
-            let conn = db.lock().unwrap_or_else(|e| e.into_inner());
+            let conn = pool.get().unwrap_or_else(|e| {
+                tracing::error!("DB pool get error: {}", e);
+                panic!("DB pool exhausted")
+            });
             let _ = crate::db::update_indexing_status(&conn, doc_id);
             let mut st = controller.state.lock().unwrap_or_else(|e| e.into_inner());
             st.completed_documents += 1;
@@ -327,6 +368,8 @@ pub async fn start_indexing(
             st.total_chunks = total_chunks;
             st.current_chunk = 0;
         }
+
+        let embeddings = get_embeddings_concurrent(&client, &chunks).await;
 
         for (chunk_idx, chunk_content) in chunks.iter().enumerate() {
             while controller.pause_flag.load(Ordering::Relaxed) {
@@ -345,43 +388,39 @@ pub async fn start_indexing(
             let now = chrono::Utc::now().to_rfc3339();
 
             {
-                let conn = db.lock().unwrap_or_else(|e| e.into_inner());
+                let conn = pool.get().unwrap_or_else(|e| {
+                    tracing::error!("DB pool get error: {}", e);
+                    panic!("DB pool exhausted")
+                });
                 if let Err(e) = conn.execute(
                     "INSERT INTO document_chunks (id, document_id, content, chunk_index, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
                     rusqlite::params![chunk_id, doc_id, chunk_content, chunk_idx as i32, now],
                 ) {
-                    log::warn!("Failed to insert chunk {}: {}", chunk_id, e);
+                    tracing::warn!("Failed to insert chunk {}: {}", chunk_id, e);
                     continue;
                 }
                 if let Err(e) = conn.execute(
                     "INSERT INTO fts_documents (content) VALUES (?1)",
                     rusqlite::params![chunk_content],
                 ) {
-                    log::warn!("Failed to insert into FTS: {}", e);
+                    tracing::warn!("Failed to insert into FTS: {}", e);
                 }
             }
 
-            match get_embedding(&client, chunk_content).await {
-                Ok(embedding) => {
-                    let embedding_id = uuid::Uuid::new_v4().to_string();
-                    let blob = embedding_to_blob(&embedding);
-                    let now_emb = chrono::Utc::now().to_rfc3339();
+            if let Some(embedding) = &embeddings[chunk_idx] {
+                let embedding_id = uuid::Uuid::new_v4().to_string();
+                let blob = embedding_to_blob(embedding);
+                let now_emb = chrono::Utc::now().to_rfc3339();
 
-                    let conn = db.lock().unwrap_or_else(|e| e.into_inner());
-                    if let Err(e) = conn.execute(
-                        "INSERT INTO embeddings (id, chunk_id, vector, created_at) VALUES (?1, ?2, ?3, ?4)",
-                        rusqlite::params![embedding_id, chunk_id, blob, now_emb],
-                    ) {
-                        log::warn!("Failed to insert embedding: {}", e);
-                    }
-                }
-                Err(e) => {
-                    log::warn!(
-                        "Embedding failed for chunk {} of {}: {}",
-                        chunk_idx,
-                        doc_name,
-                        e
-                    );
+                let conn = pool.get().unwrap_or_else(|e| {
+                    tracing::error!("DB pool get error: {}", e);
+                    panic!("DB pool exhausted")
+                });
+                if let Err(e) = conn.execute(
+                    "INSERT INTO embeddings (id, chunk_id, vector, created_at) VALUES (?1, ?2, ?3, ?4)",
+                    rusqlite::params![embedding_id, chunk_id, blob, now_emb],
+                ) {
+                    tracing::warn!("Failed to insert embedding: {}", e);
                 }
             }
 
@@ -414,9 +453,12 @@ pub async fn start_indexing(
         }
 
         {
-            let conn = db.lock().unwrap_or_else(|e| e.into_inner());
+            let conn = pool.get().unwrap_or_else(|e| {
+                tracing::error!("DB pool get error: {}", e);
+                panic!("DB pool exhausted")
+            });
             if let Err(e) = crate::db::update_indexing_status(&conn, doc_id) {
-                log::warn!("Failed to mark document {} as indexed: {}", doc_id, e);
+                tracing::warn!("Failed to mark document {} as indexed: {}", doc_id, e);
             }
         }
 

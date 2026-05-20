@@ -13,6 +13,20 @@ pub struct Config {
     pub first_launch: String,
     pub language: String,
     pub license: Option<String>,
+    #[serde(default = "default_ollama_model")]
+    pub ollama_model: Option<String>,
+}
+
+fn default_ollama_model() -> Option<String> {
+    None
+}
+
+/// Returns the effective Ollama model name, falling back to "llama3.1:8b".
+pub fn effective_model(config: &Config) -> String {
+    config
+        .ollama_model
+        .clone()
+        .unwrap_or_else(|| "llama3.1:8b".to_string())
 }
 
 #[allow(dead_code)]
@@ -87,6 +101,7 @@ pub fn on_app_startup(app: &mut tauri::App) {
         first_launch: chrono::Local::now().to_rfc3339(),
         language: "it".to_string(),
         license: None,
+        ollama_model: None,
     };
 
     save_config(&config_path, &config);

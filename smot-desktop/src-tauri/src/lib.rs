@@ -1,4 +1,5 @@
 mod auto_config;
+pub mod crash_handler;
 mod db;
 mod error;
 mod indexing;
@@ -7,15 +8,16 @@ mod parsers;
 mod setup;
 mod system_probe;
 
-use rusqlite::Connection;
+use r2d2::Pool;
+use r2d2_sqlite::SqliteConnectionManager;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use sysinfo::{Disks, System};
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 pub struct AppState {
     active_mode: Mutex<String>,
-    db: Arc<Mutex<Connection>>,
+    db: Pool<SqliteConnectionManager>,
     controller: Arc<indexing::IndexingController>,
     client: reqwest::Client,
 }
@@ -50,7 +52,7 @@ struct ViewerDocument {
     pages: u16,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct UploadDocumentInput {
     files: Vec<String>,
     category: String,
@@ -67,7 +69,7 @@ struct UploadResponse {
     uploaded_documents: Vec<UploadedDocument>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct StartIndexingInput {
     document_ids: Vec<String>,
 }
@@ -96,7 +98,7 @@ struct ChatSource {
     snippet: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct ChatQueryInput {
     question: String,
     #[allow(dead_code)]
@@ -109,7 +111,7 @@ struct ChatResponse {
     sources: Vec<ChatSource>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct ViewerPageInput {
     document_id: String,
     page: u16,
@@ -129,8 +131,6 @@ struct ViewerPageData {
 struct ParseDocumentInput {
     file_path: String,
 }
-
-// --- Public validation helpers (testable without Tauri runtime) ---
 
 pub fn validate_upload_file_path(path: &str) -> Result<(), String> {
     if path.trim().is_empty() {
@@ -186,11 +186,11 @@ async fn get_system_status(state: tauri::State<'_, AppState>) -> Result<SystemSt
         disks.iter().fold(0u64, |acc, d| acc + d.total_space()) as f32 / 1073741824.0;
 
     let (doc_count, indexed_count) = {
-        let db = state.db.lock().map_err(|e| e.to_string())?;
-        let docs: i64 = db
+        let conn = db::get_conn(&state.db)?;
+        let docs: i64 = conn
             .query_row("SELECT COUNT(*) FROM documents", [], |r| r.get(0))
             .unwrap_or(0);
-        let indexed: i64 = db
+        let indexed: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM documents WHERE indexed = 1",
                 [],
@@ -255,9 +255,10 @@ fn update_mode(mode: String, state: tauri::State<AppState>) -> ModeData {
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(state))]
 fn get_documents(state: tauri::State<AppState>) -> Result<Vec<ViewerDocument>, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    let docs = db::get_all_documents(&db)
+    let conn = db::get_conn(&state.db)?;
+    let docs = db::get_all_documents(&conn)
         .map_err(|e| e.to_string())?
         .into_iter()
         .map(|row| ViewerDocument {
@@ -274,6 +275,7 @@ fn get_documents(state: tauri::State<AppState>) -> Result<Vec<ViewerDocument>, S
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(state))]
 fn upload_documents(
     app_handle: tauri::AppHandle,
     state: tauri::State<AppState>,
@@ -289,7 +291,7 @@ fn upload_documents(
     let docs_dir = app_data_dir.join("documents");
     fs::create_dir_all(&docs_dir).map_err(|e| format!("Cannot create documents dir: {}", e))?;
 
-    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db::get_conn(&state.db)?;
     let mut uploaded = Vec::new();
 
     for file_path_str in &payload.files {
@@ -322,7 +324,7 @@ fn upload_documents(
         let now = chrono::Utc::now().to_rfc3339();
         let relative_path = format!("documents/{}", dest_file_name);
         db::insert_document(
-            &db,
+            &conn,
             &uuid,
             &file_name,
             &relative_path,
@@ -345,6 +347,7 @@ fn upload_documents(
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(state))]
 async fn start_indexing(
     app_handle: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
@@ -378,12 +381,12 @@ async fn start_indexing(
         Some(payload.document_ids)
     };
     let controller = state.controller.clone();
-    let db = state.db.clone();
+    let pool = state.db.clone();
     let client = state.client.clone();
 
     let app = app_handle.clone();
     tauri::async_runtime::spawn(async move {
-        crate::indexing::start_indexing(app, controller, db, client, document_ids).await;
+        crate::indexing::start_indexing(app, controller, pool, client, document_ids).await;
     });
 
     Ok(StartIndexingResponse {
@@ -442,7 +445,9 @@ fn continue_in_background(state: tauri::State<AppState>) -> Result<serde_json::V
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(state))]
 async fn chat_query(
+    app_handle: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
     payload: ChatQueryInput,
 ) -> Result<ChatResponse, String> {
@@ -455,10 +460,14 @@ async fn chat_query(
 
     ollama::check_rate_limit().map_err(|e| e.to_string())?;
 
-    let (sources, context) = {
-        let db = state.db.lock().map_err(|e| e.to_string())?;
+    let model = crate::setup::load_config(&app_handle)
+        .as_ref()
+        .map(crate::setup::effective_model)
+        .unwrap_or_else(|| "llama3.1:8b".to_string());
 
-        // Build FTS5 search query from user question words
+    let (sources, context) = {
+        let conn = db::get_conn(&state.db)?;
+
         let search_query = payload
             .question
             .split_whitespace()
@@ -470,7 +479,7 @@ async fn chat_query(
         let mut sources = Vec::new();
 
         if !search_query.is_empty() {
-            let results = db::search_fts5(&db, &search_query).map_err(|e| e.to_string())?;
+            let results = db::search_fts5(&conn, &search_query).map_err(|e| e.to_string())?;
             for r in results {
                 sources.push(ChatSource {
                     document_id: r.document_id,
@@ -481,7 +490,6 @@ async fn chat_query(
             }
         }
 
-        // Build context from sources
         let context = sources
             .iter()
             .map(|s| {
@@ -496,24 +504,22 @@ async fn chat_query(
         (sources, context)
     };
 
-    // No results — return early
     if sources.is_empty() {
         return Ok(ChatResponse {
-      answer: "No relevant documents found for your query. Try different keywords or upload more documents.".to_string(),
-      sources: vec![],
-    });
+            answer: "No relevant documents found for your query. Try different keywords or upload more documents.".to_string(),
+            sources: vec![],
+        });
     }
 
-    // Build prompt for Ollama
     let system_prompt = "You are a document assistant. Answer the user's question based ONLY on the provided context. If the context doesn't contain enough information, say so. Be concise.";
     let user_prompt = format!("Context:\n{}\n\nQuestion: {}", context, payload.question);
 
     let client = state.client.clone();
     let ollama_payload = serde_json::json!({
-      "model": "llama3.1:8b",
-      "prompt": format!("{}\n\n{}", system_prompt, user_prompt),
-      "stream": false,
-      "options": { "temperature": 0.3, "num_predict": 500 }
+        "model": model,
+        "prompt": format!("{}\n\n{}", system_prompt, user_prompt),
+        "stream": false,
+        "options": { "temperature": 0.3, "num_predict": 500 }
     });
 
     match client
@@ -532,36 +538,31 @@ async fn chat_query(
             Ok(ChatResponse { answer, sources })
         }
         Err(_) => {
-            // Fallback when Ollama is not running
             Ok(ChatResponse {
-        answer: format!(
-          "I found {} relevant documents, but Ollama is not running. Start Ollama to get AI-powered answers.\n\nFound documents:\n{}",
-          sources.len(),
-          sources.iter().map(|s| format!("- {} (page {})", s.document_name, s.page)).collect::<Vec<_>>().join("\n")
-        ),
-        sources,
-      })
+                answer: format!(
+                    "I found {} relevant documents, but Ollama is not running. Start Ollama to get AI-powered answers.\n\nFound documents:\n{}",
+                    sources.len(),
+                    sources.iter().map(|s| format!("- {} (page {})", s.document_name, s.page)).collect::<Vec<_>>().join("\n")
+                ),
+                sources,
+            })
         }
     }
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(state))]
 fn get_viewer_page(
     app_handle: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
     payload: ViewerPageInput,
 ) -> Result<ViewerPageData, String> {
-    // Validate document_id is a valid UUID
     uuid::Uuid::parse_str(&payload.document_id)
         .map_err(|_| format!("Invalid document ID: {}", payload.document_id))?;
 
-    // Look up document in DB for name and path
     let (doc_name, doc_path_str) = {
-        let db = state
-            .db
-            .lock()
-            .map_err(|e| format!("DB lock error: {}", e))?;
-        let mut stmt = db
+        let conn = db::get_conn(&state.db)?;
+        let mut stmt = conn
             .prepare("SELECT name, path FROM documents WHERE id = ?1")
             .map_err(|e| format!("DB query error: {}", e))?;
         stmt.query_row(rusqlite::params![&payload.document_id], |row| {
@@ -570,7 +571,6 @@ fn get_viewer_page(
         .map_err(|e| format!("Document not found in DB: {}", e))?
     };
 
-    // Resolve file path (try absolute first, then relative to app_data_dir)
     let doc_path = std::path::PathBuf::from(&doc_path_str);
     let resolved_path = if doc_path.is_absolute() && doc_path.exists() {
         doc_path
@@ -591,11 +591,9 @@ fn get_viewer_page(
         return Err(format!("Document file not found: {}", doc_path_str));
     }
 
-    // Extract text using the parsers module
     let doc_text = parsers::extract_document_text(resolved_path)
         .map_err(|e| format!("Failed to extract text: {}", e))?;
 
-    // Split text into "pages" (approximate for non-PDF; PDFs use actual page count)
     let lines: Vec<&str> = doc_text.text.lines().collect();
     let lines_per_page = 50;
     let total_pages = if let Some(pc) = doc_text.page_count {
@@ -604,7 +602,6 @@ fn get_viewer_page(
         lines.len().div_ceil(lines_per_page).max(1) as u16
     };
 
-    // payload.page is 1-indexed from the frontend
     let requested_page = payload.page.max(1);
     let page_index = (requested_page - 1).min(total_pages.saturating_sub(1)) as usize;
     let start_line = page_index * lines_per_page;
@@ -631,8 +628,6 @@ fn parse_document_text(
 ) -> Result<parsers::ParsedDocumentOutput, String> {
     parsers::extract_document_text(payload.file_path.into())
 }
-
-// --- Tray & License commands ---
 
 #[tauri::command]
 async fn minimize_to_tray(app_handle: tauri::AppHandle) -> Result<(), String> {
@@ -701,6 +696,26 @@ fn validate_license(
     ValidateLicenseResponse { valid: true }
 }
 
+fn init_tracing(app_data_dir: &std::path::Path) {
+    use std::fs;
+    let logs_dir = app_data_dir.join("logs");
+    let _ = fs::create_dir_all(&logs_dir);
+
+    let env_filter = if cfg!(debug_assertions) {
+        tracing_subscriber::EnvFilter::new("debug,tokio=warn")
+    } else {
+        tracing_subscriber::EnvFilter::new("info,tokio=warn")
+    };
+
+    tracing_subscriber::fmt()
+        .with_env_filter(env_filter)
+        .with_file(true)
+        .with_line_number(true)
+        .init();
+
+    tracing::info!("SMOT logging initialized");
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -724,7 +739,9 @@ pub fn run() {
             setup::complete_onboarding,
             minimize_to_tray,
             get_license_status,
-            validate_license
+            validate_license,
+            db::backup_database,
+            db::restore_database
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
@@ -733,18 +750,24 @@ pub fn run() {
             }
         })
         .setup(|app| {
-            let db_path = db::init_database(app.handle())?;
-            let connection = match Connection::open(&db_path) {
-                Ok(conn) => conn,
-                Err(e) => {
-                    log::error!("Failed to open database connection: {}", e);
-                    return Err(Box::new(e) as Box<dyn std::error::Error>);
-                }
-            };
+            let app_data_dir = app.path().app_data_dir()?;
+            init_tracing(&app_data_dir);
+
+            if let Some(crash_report) = crash_handler::check_previous_crash() {
+                tracing::warn!("Previous crash detected: {}", crash_report);
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+                    let _ = handle.emit("crash-report", &crash_report);
+                });
+            }
+
+            let (_db_path, pool) = db::init_database_pool(app.handle())?;
+            tracing::info!("Database pool initialized");
 
             let state = AppState {
                 active_mode: Mutex::new("Balanced".to_string()),
-                db: Arc::new(Mutex::new(connection)),
+                db: pool,
                 controller: Arc::new(indexing::IndexingController::new()),
                 client: reqwest::Client::new(),
             };
@@ -763,7 +786,6 @@ pub fn run() {
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::default().build())?;
 
-            // Setup tray icon
             let show_item =
                 tauri::menu::MenuItemBuilder::with_id("show", "Mostra / Nascondi").build(app)?;
             let quit_item = tauri::menu::MenuItemBuilder::with_id("quit", "Esci").build(app)?;
@@ -887,8 +909,6 @@ mod tests {
         assert!(validate_document_id("550e8400-e29b-41d4-a716-44665544000").is_err());
     }
 
-    // --- StartIndexingInput document_ids ---
-
     #[test]
     fn test_start_indexing_empty_ids() {
         let input = StartIndexingInput {
@@ -905,8 +925,6 @@ mod tests {
         assert!(!input.document_ids.is_empty());
         assert_eq!(input.document_ids.len(), 2);
     }
-
-    // --- Struct creation tests ---
 
     #[test]
     fn test_viewer_document_creation() {

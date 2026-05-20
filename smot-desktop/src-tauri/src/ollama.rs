@@ -9,6 +9,7 @@ const MAX_REQUESTS_PER_SEC: usize = 5;
 
 static OLLAMA_CACHE: Lazy<Mutex<Option<(OllamaStatus, Instant)>>> = Lazy::new(|| Mutex::new(None));
 
+#[tracing::instrument]
 pub fn check_rate_limit() -> Result<(), String> {
     let now = Instant::now();
     let mut timestamps = RATE_LIMITS.lock().map_err(|e| e.to_string())?;
