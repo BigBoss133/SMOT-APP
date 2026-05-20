@@ -55,21 +55,22 @@ Ora serve **preparare la release beta**: aggiornare versione, generare chiavi up
 
 ---
 
-## Wave 2 — UI & Assets (Salvatore)
+## Wave 2 — UI & Assets (Salvatore) ✅
 
-- [ ] **R4**: Verificare asset installer
-  - `assets/installer/installer-header.bmp` — 150x57 px
-  - `assets/installer/installer-welcome.bmp` — 164x314 px
-  - `icons/icon.ico`, `icons/icon.icns`
-  - Se mancano placeholder, crearne di semplici
+- [x] **R4**: Verificare asset installer
+  - `assets/installer/installer-header.bmp` — 150x57 px ✅
+  - `assets/installer/installer-welcome.bmp` — 164x314 px ✅ (aggiunto a NSIS config)
+  - `icons/icon.ico` — 37KB, multi-size ✅
+  - `icons/icon.icns` — 277KB, valido ✅
+  - `welcomeImage` aggiunto a `tauri.conf.json` NSIS block
 
-- [ ] **R5**: Verificare wizard onboarding
-  - OnboardingPage si vede al primo avvio?
-  - I passi 1-5 funzionano?
-  - Traduzioni IT/EN complete?
+- [x] **R5**: Verificare wizard onboarding
+  - OnboardingPage si vede al primo avvio ✅ (event `first-launch` da `setup.rs`)
+  - I passi 1-5 funzionano ✅ (SystemDiscovery, License, ModelDownload, FirstDocument, Completion)
+  - Traduzioni IT/EN complete ✅ (`translations.ts` wizard section)
 
-- [ ] **R6**: Aggiornare `index.html` title
-  - Cambiare da "SMOT Smart Archive" a "SMOT Smart Archive Beta"
+- [x] **R6**: Aggiornare `index.html` title
+  - Già impostato a "SMOT Smart Archive Beta" ✅
 
 ---
 
