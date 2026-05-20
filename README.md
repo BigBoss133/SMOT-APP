@@ -25,7 +25,7 @@ SMOT è un'applicazione **desktop nativa** per l'archiviazione e la consultazion
 |---|---|---|---|
 | **Michele** | BigBoss133 | Backend Rust + Release + Landing API + Test | ✅ 28/28 |
 | **Salvatore** | salvograsso10 | Frontend React + UI/UX + Landing Page | ✅ 10/10 |
-| **Tommaso** | — | Database + Sicurezza + CI | ✅ 9/9 |
+| **Tommaso** | osurac5 | Database + Sicurezza + CI | ✅ 9/9 |
 
 > 🎉 **47/47 task completati** — Pronti per la beta release
 
@@ -63,6 +63,10 @@ TOMMASO    ████████████████ 100%  DB refactoring
 - Real-time indexing progress via eventi Tauri
 - Wizard full-screen (nasconde chrome in onboarding)
 - SystemDiscoveryStep con memoria unificata
+- Fix useForceGraph.ts dependency array (ref pattern)
+- Fix SettingsPage.tsx dependency array (ref pattern)
+- Fix dynamic import @tauri-apps/api → static import via services/tauri.ts
+- E2E Playwright tests (5 test: app, chat, navigation, onboarding, upload)
 
 ### Tommaso — DB + Security
 - Funzioni DB estratte in db.rs (insert_document, get_all_documents, update_indexing_status, search_fts5)
@@ -72,6 +76,7 @@ TOMMASO    ████████████████ 100%  DB refactoring
 - Config audit (nessun secret in chiaro)
 - Dead code rimosso (JobInput, IndexingFileStatus)
 - CI fix (branch trigger aggiornati)
+- Tauri build verificata (deb/rpm/AppImage, cargo test 62/62, clippy clean)
 
 ---
 
@@ -97,6 +102,7 @@ TOMMASO    ████████████████ 100%  DB refactoring
 | `cargo build` | ✅ 0 errori |
 | `cargo test` | ✅ 62/62 test passano |
 | `npx tsc --noEmit` | ✅ 0 errori |
+| `npx eslint 'src/**/*.{ts,tsx}'` | ✅ 0 errori, 0 warning |
 | `npm run build` | ✅ 321 KB JS, 16 KB CSS |
 
 ---

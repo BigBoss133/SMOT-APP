@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { ShieldAlert, Check, ExternalLink } from "lucide-react";
-import { invoke } from "@tauri-apps/api/core";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "../i18n/translations";
-import { invoke, isTauri } from "../services/tauri";
+import { invoke } from "../services/tauri";
 
 interface LicenseBlockedPageProps {
   onLicenseValidated?: () => void;

@@ -62,9 +62,6 @@ export function useForceGraph(
   useEffect(() => {
     if (!documentsRef.current.length || width === 0 || height === 0) return;
 
-    const docs = documents;
-    const rels = relations;
-
     const connMap = new Map<string, number>();
     relationsRef.current.forEach(r => {
       connMap.set(r.source, (connMap.get(r.source) ?? 0) + 1);
