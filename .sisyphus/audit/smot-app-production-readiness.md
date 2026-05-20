@@ -1,8 +1,8 @@
 # SMOT-APP Production Readiness Audit
 
-> **Data**: 20 Maggio 2026
-> **Commit analizzato**: `92440f5` (origin/main)
-> **Metodo**: Analisi codice sorgente Rust (862 righe lib.rs), React (App.tsx, ErrorBoundary), Tauri config, CI/CD workflows
+> **Data**: 20 Maggio 2026 — **Aggiornato 20 Maggio 2026 ore 18:30**
+> **Commit attuale**: `04cfd0d` (origin/main)
+> **Metodo**: Analisi codice sorgente Rust (966 righe lib.rs), React (App.tsx, ErrorBoundary), Tauri config, CI/CD workflows
 > **Team**: BigBoss133 (Michele), salvograsso10 (Salvatore), osurac5 (Tommaso)
 
 ---
@@ -10,13 +10,14 @@
 ## Riepilogo
 
 - **Layer analizzati**: 10
-- **Layer pronti**: 3/10
-- **Layer parzialmente pronti**: 4/10
-- **Layer non pronti**: 3/10
-- **Gap critici (P0)**: 8
-- **Gap importanti (P1)**: 12
+- **Layer pronti**: 3/10 → 4/10 (+1 Osservabilità base)
+- **Layer parzialmente pronti**: 4/10 → 5/10 (+1 Affidabilità migliorata)
+- **Layer non pronti**: 3/10 → 1/10
+- **Gap critici (P0)**: 8 → 5 (3 risolti da Michele)
+- **Gap importanti (P1)**: 12 → 7 (5 risolti da Michele)
 - **Gap nice-to-have (P2)**: 7
-- **Stima effort totale**: 4-6 settimane (lavorando in 3)
+- **Stima effort residuo**: 3-4 settimane (Salvatore + Tommaso)
+- **Progresso Michele**: 8/8 task P0+P1 completati ✅
 
 ---
 
@@ -140,7 +141,7 @@
 | Check | Stato | Note |
 |-------|:-----:|------|
 | Schema migrations | ⚠️ | Solo `001_initial.sql` — nessun meccanismo di migrazione versionato |
-| Backup | ❌ | Nessun meccanismo di backup database |
+| Backup | ✅ | `backup_database` e `restore_database` implementati (commit `04cfd0d`) |
 | Data export | ❌ | Nessuna funzionalità export documenti/indici |
 | Data integrity | ✅ | Chiavi esterne, ON DELETE CASCADE, FTS5 |
 | File storage | ✅ | App data dir strutturata (documents/, thumbnails/, logs/) |
@@ -164,31 +165,31 @@
 
 | # | Task | File/Riferimento | Effort | Assegnato |
 |---|------|------------------|--------|-----------|
-| P0.1 | Aggiungere panic handler e crash reporting | `main.rs`, nuovo file `panic_handler.rs` | 2gg | Michele |
-| P0.2 | Implementare structured logging (correlation ID, livelli, file rotation) | `lib.rs`, `setup.rs`, nuovo crate `tracing` | 2gg | Michele |
-| P0.3 | Fix CSP: rimuovere `'unsafe-inline'` da style-src | `tauri.conf.json`, refactor stili in CSS file | 1gg | Salvatore |
-| P0.4 | Aggiungere `npm run lint` e `tsc --noEmit` al CI | `.github/workflows/build-*.yml` | 0.5gg | Tommaso |
-| P0.5 | Configurare code signing macOS (Apple Developer cert) | `tauri.conf.json`, CI secrets | 2gg | Tommaso |
-| P0.6 | Fix doppio import in App.tsx (merge artifact) | `smot-desktop/src/App.tsx` | 0.1gg | Salvatore |
-| P0.7 | Aggiungere unit test React (Vitest + Testing Library) | `smot-desktop/src/__tests__/` | 3gg | Salvatore |
-| P0.8 | Implementare database connection pooling (r2d2) | `lib.rs`, `db.rs` | 1gg | Michele |
+| P0.1 | Aggiungere panic handler e crash reporting | `main.rs`, nuovo file `panic_handler.rs` | 2gg | Michele | ✅ FATTO `04cfd0d` |
+| P0.2 | Implementare structured logging (correlation ID, livelli, file rotation) | `lib.rs`, `setup.rs`, nuovo crate `tracing` | 2gg | Michele | ✅ FATTO `04cfd0d` |
+| P0.3 | Fix CSP: rimuovere `'unsafe-inline'` da style-src | `tauri.conf.json`, refactor stili in CSS file | 1gg | Salvatore | ⏳ |
+| P0.4 | Aggiungere `npm run lint` e `tsc --noEmit` al CI | `.github/workflows/build-*.yml` | 0.5gg | Tommaso | ⏳ |
+| P0.5 | Configurare code signing macOS (Apple Developer cert) | `tauri.conf.json`, CI secrets | 2gg | Tommaso | ⏳ |
+| P0.6 | Fix doppio import in App.tsx (merge artifact) | `smot-desktop/src/App.tsx` | 0.1gg | Salvatore | ⏳ |
+| P0.7 | Aggiungere unit test React (Vitest + Testing Library) | `smot-desktop/src/__tests__/` | 3gg | Salvatore | ⏳ |
+| P0.8 | Implementare database connection pooling (r2d2) | `lib.rs`, `db.rs` | 1gg | Michele | ✅ FATTO `04cfd0d` |
 
 ### P1 — Importanti (prima della beta pubblica)
 
 | # | Task | File/Riferimento | Effort | Assegnato |
 |---|------|------------------|--------|-----------|
-| P1.1 | Aggiungere E2E test per flussi critici (upload→index→chat) | `smot-desktop/e2e/` | 3gg | Salvatore |
-| P1.2 | Aggiungere retry logic per Ollama API con exponential backoff | `ollama.rs`, `indexing.rs` | 1gg | Michele |
-| P1.3 | Implementare `React.lazy()` + `Suspense` per tutte le pagine | `App.tsx`, tutte le pagine | 1gg | Salvatore |
-| P1.4 | Aggiungere `cargo audit` + `npm audit` al CI | `.github/workflows/build-*.yml` | 0.5gg | Tommaso |
-| P1.5 | Implementare auto-update rollback strategy | `tauri.conf.json`, nuovo file `updater.rs` | 1gg | Tommaso |
-| P1.6 | Aggiungere dark mode toggle | `src/context/ThemeContext.tsx`, `src/index.css` | 1gg | Salvatore |
-| P1.7 | Rendere Ollama model configurabile (da config.json) | `ollama.rs`, `setup.rs` | 0.5gg | Michele |
-| P1.8 | Aggiungere keyboard navigation e focus management | Tutti i componenti UI | 2gg | Salvatore |
-| P1.9 | Implementare backup/restore database | `db.rs`, nuovo comando Tauri | 2gg | Michele |
-| P1.10 | Migliorare accessibilità (WCAG AA): ARIA labels, focus, contrast | Tutti i componenti | 2gg | Salvatore |
-| P1.11 | Aggiungere graceful shutdown (DB checkpoint, cleanup) | `lib.rs` on_window_event | 0.5gg | Michele |
-| P1.12 | Aggiungere batching per embeddings Ollama | `indexing.rs` | 1gg | Michele |
+| P1.1 | Aggiungere E2E test per flussi critici (upload→index→chat) | `smot-desktop/e2e/` | 3gg | Salvatore | ⏳ |
+| P1.2 | Aggiungere retry logic per Ollama API con exponential backoff | `ollama.rs`, `indexing.rs` | 1gg | Michele | ✅ FATTO `04cfd0d` |
+| P1.3 | Implementare `React.lazy()` + `Suspense` per tutte le pagine | `App.tsx`, tutte le pagine | 1gg | Salvatore | ⏳ |
+| P1.4 | Aggiungere `cargo audit` + `npm audit` al CI | `.github/workflows/build-*.yml` | 0.5gg | Tommaso | ⏳ |
+| P1.5 | Implementare auto-update rollback strategy | `tauri.conf.json`, nuovo file `updater.rs` | 1gg | Tommaso | ⏳ |
+| P1.6 | Aggiungere dark mode toggle | `src/context/ThemeContext.tsx`, `src/index.css` | 1gg | Salvatore | ⏳ |
+| P1.7 | Rendere Ollama model configurabile (da config.json) | `ollama.rs`, `setup.rs` | 0.5gg | Michele | ✅ FATTO `04cfd0d` |
+| P1.8 | Aggiungere keyboard navigation e focus management | Tutti i componenti UI | 2gg | Salvatore | ⏳ |
+| P1.9 | Implementare backup/restore database | `db.rs`, nuovo comando Tauri | 2gg | Michele | ✅ FATTO `04cfd0d` |
+| P1.10 | Migliorare accessibilità (WCAG AA): ARIA labels, focus, contrast | Tutti i componenti | 2gg | Salvatore | ⏳ |
+| P1.11 | Aggiungere graceful shutdown (DB checkpoint, cleanup) | `lib.rs` on_window_event | 0.5gg | Michele | ✅ FATTO `04cfd0d` |
+| P1.12 | Aggiungere batching per embeddings Ollama | `indexing.rs` | 1gg | Michele | ✅ FATTO `04cfd0d` |
 
 ### P2 — Nice-to-have (post-launch)
 
@@ -220,7 +221,7 @@
 | Comando | Risultato |
 |---------|:--------:|
 | `cargo build` | ✅ 0 errori |
-| `cargo test` | ✅ 62/62 test passano |
+| `cargo test` | ✅ 65/65 test passano |
 | `cargo clippy -- -D warnings` | ✅ Clean |
 | `npx tsc --noEmit` | ✅ 0 errori |
 | `npx eslint 'src/**/*.{ts,tsx}'` | ✅ 0 errori, 0 warning |
@@ -231,17 +232,20 @@
 
 ## Verdict
 
-L'app è in uno stato **alpha avanzato** — non production-ready. I pilastri core funzionano (upload, indexing, ricerca, chat RAG) ma mancano pezzi fondamentali per una release pubblica:
+L'app è in uno stato **alpha avanzato → beta iniziale**. I pilastri core funzionano (upload, indexing, ricerca, chat RAG). Progressi significativi di Michele:
 
-- **Sicurezza**: CSP debole, nessun code signing, nessun crash reporting
-- **Affidabilità**: Nessun retry, nessun health check, single point of failure sul DB
-- **Observability**: Logging quasi assente in produzione
-- **Testing**: Zero test React, E2E coverage minimo
-- **UX**: Accessibilità insufficiente, no dark mode, no keyboard nav
-- **Compliance**: Zero documentazione legale (GDPR, privacy, EULA)
+- ✅ **Crash reporting**: panic hook scrive crash-report.json, rilevato al prossimo avvio
+- ✅ **Structured logging**: `tracing` crate con livelli (DEBUG in dev, INFO in prod), file + linea
+- ✅ **DB connection pooling**: r2d2 con pool da 4 connessioni, niente più Mutex bottleneck
+- ✅ **Retry logic**: 3 tentativi con exponential backoff (1s, 2s, 4s) per embeddings Ollama
+- ✅ **Model configurabile**: `ollama_model` in config.json, fallback a llama3.1:8b
+- ✅ **Backup/restore DB**: `backup_database` e `restore_database` Tauri commands
+- ✅ **Batching embeddings**: 3 richieste concorrenti per embeddings Ollama
 
-Con 4-6 settimane di lavoro focalizzato sui task P0 e P1, l'app può raggiungere uno stato **beta pubblicabile**.
+Rimangono da fare i task di Salvatore (frontend: CSP, test React, lazy loading, dark mode, a11y, keyboard nav) e Tommaso (CI, code signing, audit deps, auto-update rollback, GDPR).
+
+Con 3-4 settimane di lavoro focalizzato sui task P0 e P1 rimanenti, l'app può raggiungere uno stato **beta pubblicabile**.
 
 ---
 
-*Audit generato da Atlas (Sisyphus Orchestrator) — 20 Maggio2026*
+*Audit generato da Atlas (Sisyphus Orchestrator) — 20 Maggio 2026*
