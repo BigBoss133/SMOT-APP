@@ -170,17 +170,3 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-const styleSheet = document.createElement("style");
-styleSheet.textContent = `
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-`;
-document.head.appendChild(styleSheet);

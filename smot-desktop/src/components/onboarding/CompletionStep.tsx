@@ -221,26 +221,3 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-const styleSheet = document.createElement("style");
-styleSheet.textContent = `
-  @keyframes confetti-fall {
-    0% {
-      transform: translateY(0) rotate(0deg);
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(100vh) rotate(720deg);
-      opacity: 0;
-    }
-  }
-  
-  @keyframes pulse {
-    0%, 100% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.1);
-    }
-  }
-`;
-document.head.appendChild(styleSheet);

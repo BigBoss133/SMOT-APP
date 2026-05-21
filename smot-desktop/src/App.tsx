@@ -1,24 +1,15 @@
 import { Languages, Search } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LicenseBanner } from "./components/LicenseBanner";
 import { RightSystemPanel } from "./components/RightSystemPanel";
 import { SidebarNav } from "./components/SidebarNav";
 import { StatusBar } from "./components/StatusBar";
 import { useLanguage } from "./context/LanguageContext";
+import { useTheme } from "./context/ThemeContext";
 import { translations } from "./i18n/translations";
-import ChatPage from "./pages/ChatPage";
 import DashboardPage from "./pages/DashboardPage";
-import GraphPage from "./pages/GraphPage";
-import IndexingPage from "./pages/IndexingPage";
-import LicenseBlockedPage from "./pages/LicenseBlockedPage";
-import OnboardingPage from "./pages/OnboardingPage";
-import SettingsPage from "./pages/SettingsPage";
-import UploadPage from "./pages/UploadPage";
-import ViewerPage from "./pages/ViewerPage";
 import {
   getDocuments,
   getModes,
@@ -28,14 +19,32 @@ import {
 import { invoke, listen, isTauri } from "./services/tauri";
 import type { LicenseStatusType, ModeData, SystemStatus, ViewerDocument } from "./types";
 
+const ChatPage = lazy(() => import("./pages/ChatPage"));
+const GraphPage = lazy(() => import("./pages/GraphPage"));
+const IndexingPage = lazy(() => import("./pages/IndexingPage"));
+const LicenseBlockedPage = lazy(() => import("./pages/LicenseBlockedPage"));
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const UploadPage = lazy(() => import("./pages/UploadPage"));
+const ViewerPage = lazy(() => import("./pages/ViewerPage"));
+
 const fallbackModes: ModeData = {
   active_mode: "Balanced",
   available_modes: ["Performance", "Balanced", "Lite"],
 };
 
+function PageLoader() {
+  return (
+    <div className="page-loader" role="status" aria-label="Caricamento pagina">
+      <div className="skeleton skeleton-rect" style={{ width: "100%", height: "200px" }} />
+    </div>
+  );
+}
+
 export default function App() {
   const navigate = useNavigate();
   const { language, toggleLanguage } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const text = translations[language];
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [documents, setDocuments] = useState<ViewerDocument[]>([]);
@@ -139,16 +148,23 @@ export default function App() {
   };
 
   if (licenseBlocked) {
-    return <LicenseBlockedPage onLicenseValidated={handleLicenseValidated} />;
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <LicenseBlockedPage onLicenseValidated={handleLicenseValidated} />
+      </Suspense>
+    );
   }
 
   return (
     <div className="app-shell" data-testid="smot-app-shell">
+      <a href="#main-content-area" className="skip-link" data-testid="skip-link">
+        Vai al contenuto principale
+      </a>
       {!isOnboarding && licenseStatus === "grace" && <LicenseBanner />}
 
-      {!isOnboarding && <SidebarNav />}
+      {!isOnboarding && <nav aria-label="Navigazione principale"><SidebarNav /></nav>}
 
-      <main className="main-content" data-testid="main-content-area">
+      <main className="main-content" data-testid="main-content-area" id="main-content-area" role="main">
         {!isOnboarding && (
           <header className="topbar" data-testid="main-topbar">
             <h1 data-testid="app-main-title">{text.appName}</h1>
@@ -172,41 +188,51 @@ export default function App() {
                   {language.toUpperCase()}
                 </span>
               </button>
+              <button
+                className="theme-toggle"
+                onClick={toggleTheme}
+                data-testid="theme-toggle-button"
+                aria-label={theme === "dark" ? "Passa a tema chiaro" : "Passa a tema scuro"}
+              >
+                <span data-testid="theme-toggle-value">{theme === "dark" ? "🌙" : "☀️"}</span>
+              </button>
             </div>
           </header>
         )}
 
         <ErrorBoundary>
-          <Routes>
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/license-blocked" element={<LicenseBlockedPage onLicenseValidated={handleLicenseValidated} />} />
-            <Route
-              path="/"
-              element={
-                <DashboardPage
-                  documents={documents}
-                  modeData={modeData}
-                  onModeChange={changeMode}
-                />
-              }
-            />
-            <Route
-              path="/upload"
-              element={<UploadPage onRefreshDocuments={refreshDocuments} />}
-            />
-            <Route
-              path="/indexing/:jobId"
-              element={<IndexingPage onStatusUpdate={() => void refreshDocuments()} />}
-            />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/viewer" element={<ViewerPage />} />
-            <Route path="/viewer/:documentId" element={<ViewerPage />} />
-            <Route path="/graph" element={<GraphPage />} />
-            <Route
-              path="/settings"
-              element={<SettingsPage modeData={modeData} onModeChange={changeMode} />}
-            />
-          </Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/license-blocked" element={<LicenseBlockedPage onLicenseValidated={handleLicenseValidated} />} />
+              <Route
+                path="/"
+                element={
+                  <DashboardPage
+                    documents={documents}
+                    modeData={modeData}
+                    onModeChange={changeMode}
+                  />
+                }
+              />
+              <Route
+                path="/upload"
+                element={<UploadPage onRefreshDocuments={refreshDocuments} />}
+              />
+              <Route
+                path="/indexing/:jobId"
+                element={<IndexingPage onStatusUpdate={() => void refreshDocuments()} />}
+              />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/viewer" element={<ViewerPage />} />
+              <Route path="/viewer/:documentId" element={<ViewerPage />} />
+              <Route path="/graph" element={<GraphPage />} />
+              <Route
+                path="/settings"
+                element={<SettingsPage modeData={modeData} onModeChange={changeMode} />}
+              />
+            </Routes>
+          </Suspense>
         </ErrorBoundary>
       </main>
 

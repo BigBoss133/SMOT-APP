@@ -37,6 +37,7 @@ function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps)
             justifyContent: "center",
             color: "#4338f5",
           }}
+          aria-hidden="true"
           data-testid="empty-state-icon"
         >
           <Icon size={28} />
@@ -68,6 +69,7 @@ function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps)
         <button
           className="action-button"
           onClick={action.onClick}
+          aria-label={action.label}
           data-testid="empty-state-action"
         >
           {action.label}

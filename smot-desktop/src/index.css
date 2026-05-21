@@ -1017,3 +1017,179 @@ mark,
   white-space: nowrap;
   box-shadow: 0 4px 16px rgba(0,0,0,0.3);
 }
+
+/* ---- 14. CSP Fix: Move inline styles to CSS classes ---- */
+@keyframes toast-slide-in {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes step-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.toast-slide-in { animation: toast-slide-in 0.4s ease-out; }
+.skeleton-shimmer {
+  background: linear-gradient(90deg,
+    rgba(138, 155, 181, 0.15) 0%,
+    rgba(138, 155, 181, 0.3) 50%,
+    rgba(138, 155, 181, 0.15) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+.step-enter { animation: step-enter 400ms ease-out; }
+.fade-in-up { animation: fadeInUp 400ms ease-out; }
+.confetti-fall { animation: confetti-fall 3s ease-out forwards; }
+.pulse { animation: pulse 2s ease-in-out infinite; }
+
+/* ---- 15. Dark/Light Theme ---- */
+[data-theme="dark"] {
+  --app-bg-primary: #0a1a3b;
+  --app-bg-secondary: #f8fafc;
+  --app-bg-sidebar: #0a1a3b;
+  --primary-action: #4338f5;
+  --secondary-action: #894df8;
+  --accent-highlight: #bcc41c;
+  --soft-accent: #894df8;
+  --text-on-dark: #ffffff;
+  --text-on-light: #111111;
+  --text-muted: #8a9bb5;
+  --success: #10981a;
+  --warning: #f59e0b;
+  --error: #ef4444;
+}
+
+[data-theme="light"] {
+  --app-bg-primary: #1a1a2e;
+  --app-bg-secondary: #f5f5f5;
+  --app-bg-sidebar: #1a1a2e;
+  --primary-action: #4338f5;
+  --secondary-action: #894df8;
+  --accent-highlight: #bcc41c;
+  --soft-accent: #894df8;
+  --text-on-dark: #ffffff;
+  --text-on-light: #111111;
+  --text-muted: #6b7280;
+  --success: #10981a;
+  --warning: #f59e0b;
+  --error: #ef4444;
+}
+
+/* Theme toggle button styles */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #d4d7e1;
+  cursor: pointer;
+  transition: transform 180ms ease, background-color 180ms ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  background: #f2efff;
+}
+
+/* Page loader for lazy loading */
+.page-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  min-height: 200px;
+}
+
+/* ---- 16. Keyboard Navigation & Accessibility ---- */
+
+/* Visible focus indicator */
+*:focus-visible {
+  outline: 2px solid #4338f5;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #4338f5;
+  outline-offset: 2px;
+}
+
+/* Skip to content link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #4338f5;
+  color: #ffffff;
+  padding: 8px 16px;
+  z-index: 100;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 8px 0;
+  transition: top 200ms ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  *:focus-visible {
+    outline-width: 3px;
+  }
+  
+  .topbar,
+  .status-bar,
+  .left-sidebar {
+    border-color: #ffffff;
+  }
+}
+
+/* Reduced motion - already defined above, ensure all animations respect it */
+@media (prefers-reduced-motion: reduce) {
+  .page-loader {
+    animation: none;
+  }
+}

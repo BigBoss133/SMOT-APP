@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "tauri": "tauri",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.0",
@@ -23,8 +26,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.60.0",
+    "@playwright/test": "^1.52.0",
     "@tauri-apps/cli": "^2.11.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/d3-force": "^3.0.10",
     "@types/d3-selection": "^3.0.11",
     "@types/d3-zoom": "^3.0.8",
@@ -36,9 +41,11 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
-    "@playwright/test": "^1.52.0",
+    "happy-dom": "^20.9.0",
+    "jsdom": "^29.1.1",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.10"
+    "vite": "^8.0.10",
+    "vitest": "^4.1.7"
   }
 }

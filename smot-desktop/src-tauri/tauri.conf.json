@@ -22,7 +22,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https://asset.localhost data:; script-src 'self'"
+      "csp": "default-src 'self'; style-src 'self'; img-src 'self' asset: https://asset.localhost data:; script-src 'self'"
     }
   },
   "bundle": {
@@ -41,7 +41,10 @@
     "windows": {
       "nsis": {
         "installMode": "currentUser",
-        "languages": ["Italian", "English"],
+        "languages": [
+          "Italian",
+          "English"
+        ],
         "displayLanguageSelector": true,
         "installerIcon": "icons/icon.ico",
         "headerImage": "assets/installer/installer-header.bmp",

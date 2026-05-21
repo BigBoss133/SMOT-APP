@@ -63,8 +63,6 @@ export default function SettingsPage({ modeData, onModeChange }: SettingsPagePro
     { id: "nomic-embed-text", name: "Nomic Embed Text", size: "274 MB" },
   ];
 
-  const textRef = useRef(text);
-  const toastRef = useRef(toast);
 
   useEffect(() => {
     textRef.current = text;

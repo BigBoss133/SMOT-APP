@@ -58,7 +58,9 @@ function Toast({ toast, onDismiss }: ToastProps) {
         animation: "toast-slide-in 300ms ease",
         ...toastStyles[toast.type],
       }}
-      data-testid={`toast-${toast.type}`}
+      role="alert"
+        aria-live="assertive"
+        data-testid={`toast-${toast.type}`}
     >
       <span style={{ flex: 1 }}>{toast.message}</span>
       <button
@@ -75,12 +77,6 @@ function Toast({ toast, onDismiss }: ToastProps) {
       >
         ×
       </button>
-      <style>{`
-        @keyframes toast-slide-in {
-          from { transform: translateX(120%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 }

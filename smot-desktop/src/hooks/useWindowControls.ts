@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, isTauri, getCurrentWindow } from "../services/tauri";
 
 interface WindowControls {
   minimizeToTray: () => Promise<void>;

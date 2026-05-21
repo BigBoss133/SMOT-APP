@@ -35,6 +35,8 @@ function ConfirmDialog({
 
   return (
     <dialog
+      aria-labelledby="confirm-dialog-title"
+      aria-describedby="confirm-dialog-message"
       ref={dialogRef}
       className="confirm-dialog"
       data-testid="confirm-dialog"
