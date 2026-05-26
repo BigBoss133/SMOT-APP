@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1779780931185" clover="3.2.0">
+  <project timestamp="1779780931186" name="All files">
+    <metrics statements="17" coveredstatements="17" conditionals="8" coveredconditionals="8" methods="6" coveredmethods="6" elements="31" coveredelements="31" complexity="0" loc="17" ncloc="17" packages="1" files="1" classes="1"/>
+    <file name="ThemeContext.tsx" path="/app/smot-desktop/src/context/ThemeContext.tsx">
+      <metrics statements="17" coveredstatements="17" conditionals="8" coveredconditionals="8" methods="6" coveredmethods="6"/>
+      <line num="10" count="1" type="stmt"/>
+      <line num="13" count="7" type="stmt"/>
+      <line num="14" count="4" type="stmt"/>
+      <line num="15" count="4" type="stmt"/>
+      <line num="16" count="4" type="cond" truecount="4" falsecount="0"/>
+      <line num="20" count="3" type="stmt"/>
+      <line num="23" count="7" type="stmt"/>
+      <line num="24" count="7" type="stmt"/>
+      <line num="25" count="7" type="stmt"/>
+      <line num="26" count="7" type="stmt"/>
+      <line num="32" count="7" type="stmt"/>
+      <line num="33" count="3" type="cond" truecount="2" falsecount="0"/>
+      <line num="36" count="7" type="stmt"/>
+      <line num="44" count="10" type="stmt"/>
+      <line num="45" count="10" type="cond" truecount="2" falsecount="0"/>
+      <line num="46" count="2" type="stmt"/>
+      <line num="48" count="7" type="stmt"/>
+    </file>
+  </project>
+</coverage>
