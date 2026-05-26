@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "SMOT Beta",
-  "version": "0.1.0",
+  "version": "0.1.0-beta",
   "identifier": "com.smot.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -22,7 +22,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self'; img-src 'self' asset: https://asset.localhost data:; script-src 'self'"
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https://asset.localhost data:; script-src 'self'"
     }
   },
   "bundle": {
@@ -41,14 +41,11 @@
     "windows": {
       "nsis": {
         "installMode": "currentUser",
-        "languages": [
-          "Italian",
-          "English"
-        ],
+        "languages": ["Italian", "English"],
         "displayLanguageSelector": true,
         "installerIcon": "icons/icon.ico",
         "headerImage": "assets/installer/installer-header.bmp",
-        "sidebarImage": "assets/installer/installer-welcome.bmp",
+        "welcomeImage": "assets/installer/installer-welcome.bmp",
         "startMenuFolder": "SMOT"
       },
       "wix": {

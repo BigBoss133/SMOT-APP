@@ -200,6 +200,10 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 | **FASE 3** | A21 — Fix TypeScript errors HEXA-STUDIO | ✅ 0 errori |
 | **FASE 3** | A22 — Fix build Next.js HEXA-STUDIO | ✅ Build verificata |
 | **FASE 3** | A23 — E2E Playwright tests HEXA-STUDIO | ✅ 5 spec file |
+| **FASE 2** | M4 — SQLite fallback test DB HEXA-STUDIO | ✅ Auto-detection |
+| **FASE 2** | A12 — Fix test_ai_chat HEXA-STUDIO | ✅ 4/4 |
+| **FASE 2** | A17 — Fix test_2fa HEXA-STUDIO | ✅ 6/6 |
+| **FASE 2** | A20 — Test OAuth HEXA-STUDIO | ✅ 8/8 |
 
 ### Dettaglio FASE 1 (SMOT-Landing-page)
 - **S1**: Rimosso JWT_SECRET hardcoded `'dev-secret-change-me'` da `auth.ts`, ora usa `process.env.JWT_SECRET` con validazione
@@ -223,6 +227,12 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 - **A21**: `npx tsc --noEmit` → **0 errori** TypeScript ✅
 - **A22**: Build Next.js verificata; rimosso `eslint: { ignoreDuringBuilds: true }` da `next.config.js` ✅
 - **A23**: 5 E2E spec Playwright (app, login, legal, media, profile); fix selectors e config path ✅
+
+### Dettaglio Test Backend HEXA-STUDIO (M4, A12, A17, A20)
+- **M4**: conftest.py con fallback SQLite (aiosqlite) se PostgreSQL non disponibile ✅
+- **A12**: test_ai_chat.py — 4/4 test passati ✅
+- **A17**: test_2fa.py — 6/6 test passati ✅
+- **A20**: test_oauth.py — 8/8 test passati ✅ (Threads + Meta + LinkedIn + Twitter + TikTok)
 
 ### Dettaglio FASE 3 (SMOT-Landing-page)
 - **S10**: Test accessibilità axe-core in `e2e/a11y.spec.ts` e `e2e/accessibility.spec.ts`
