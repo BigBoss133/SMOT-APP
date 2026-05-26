@@ -25,15 +25,15 @@
 | S2 | SMOT-Landing-page | Sostituire localStorage JWT → httpOnly cookie | `src/context/AuthContext.tsx:21,33,39,44` | ALTO | ✅ COMPLETATO |
 | S3 | SMOT-Landing-page | Rimuovere API URL hardcoded localhost → env var | `src/services/api.ts:1` | CRITICO | ✅ COMPLETATO |
 | S4 | SMOT-Landing-page | Aggiungere ESLint + Prettier config | root del progetto | MEDIO | ✅ COMPLETATO |
+| S12 | HEXA-STUDIO | Upgrade Next.js ≥15.5.18 (CVE fix) | `frontend/package.json` | CRITICO | ✅ COMPLETATO |
+| S13 | HEXA-STUDIO | Installare ESLint nel frontend (`npm install --save-dev eslint`) | `frontend/` | ALTO | ✅ COMPLETATO |
+| S14 | HEXA-STUDIO | Creare GitHub Actions CI (lint + build + test) | `.github/workflows/` | MEDIO | ✅ COMPLETATO |
 
 ### 🟢 Tommaso — DevOps/Fullstack Critici
 | # | Repo | Task | File/Riferimento | Priorità |
 |---|------|------|------------------|----------|
 | T1 | offline-smart-archive | Fix PostCSS config → installare `@tailwindcss/postcss` e aggiornare `postcss.config.js` | `postcss.config.js` | CRITICO |
 | T2 | offline-smart-archive | Cambiare `debug = False` come default | `backend/core/config.py:8` | ALTO |
-| T3 | HEXA-STUDIO | Upgrade Next.js ≥15.5.18 (CVE fix) | `frontend/package.json` | CRITICO |
-| T4 | HEXA-STUDIO | Installare ESLint nel frontend (`npm install --save-dev eslint`) | `frontend/` | ALTO |
-| T5 | HEXA-STUDIO | Creare GitHub Actions CI (lint + build + test) | `.github/workflows/` | MEDIO |
 | T6 | SMOT-Landing-page | Fix CORS wildcard → limitare ai domini autorizzati | `backend/src/index.ts:15` | ✅ COMPLETATO |
 | T7 | SMOT-Landing-page | Aggiungere validazione env var a startup | `backend/src/index.ts` | ✅ COMPLETATO |
 | T8 | SMOT-Landing-page | Validare STRIPE_SECRET_KEY a runtime | `backend/src/routes/payments.ts:7` | ✅ COMPLETATO |
@@ -66,8 +66,6 @@
 | T9 | SMOT-APP | Verificare Tauri build (`npm run tauri build`) con Rust toolchain | `src-tauri/` | ✅ COMPLETATO |
 | T10 | offline-smart-archive | Aggiungere `.env.example` con tutte le variabili necessarie | root del progetto | MEDIO |
 | T11 | offline-smart-archive | Fix generic exception handling → eccezioni specifiche | `backend/services/llm.py:75`, `model_manager.py:107` | MEDIO |
-| T12 | HEXA-STUDIO | Aggiungere `.env.example` con password sicure per produzione | `backend/.env.example` | MEDIO |
-| T13 | HEXA-STUDIO | Configurare HTTPS + SSL per deployment nginx | `nginx/`, `docker-compose.yml` | MEDIO |
 
 ### 🔴 Michele (ULTIMO)
 | # | Repo | Task | File/Riferimento | Priorità |
@@ -77,6 +75,8 @@
 | M8 | SMOT-CREATE | Aggiungere test (pytest + httpx AsyncClient) | root del progetto | MEDIO |
 | M9 | HEXA-STUDIO | Aggiornare dipendenze Python datate (bcrypt, cryptography, certifi) | `requirements.txt` | MEDIO |
 | M10 | offline-smart-archive | Sostituire `except Exception` con eccezioni specifiche | `backend/services/` | BASSO |
+| M15 | HEXA-STUDIO | Aggiungere `.env.example` con password sicure per produzione | `backend/.env.example` | ✅ COMPLETATO |
+| M16 | HEXA-STUDIO | Configurare HTTPS + SSL per deployment nginx | `nginx/`, `docker-compose.yml` | ✅ COMPLETATO |
 
 ---
 
@@ -94,7 +94,6 @@
 | T14 | offline-smart-archive | Rinominare progetto in `pyproject.toml` per coerenza | `pyproject.toml:3` |
 | T15 | smot | Aggiungere `asyncio_default_fixture_loop_scope = "function"` | `pyproject.toml` |
 | T16 | smot | Rimuovere `filterwarnings = ["ignore::DeprecationWarning"]` globale | `pyproject.toml:84-86` |
-| T17 | HEXA-STUDIO | Aggiungere GitHub Actions per deploy automatico | `.github/workflows/` |
 
 ### 🔴 Michele (ULTIMO)
 | # | Repo | Task | File/Riferimento |
@@ -103,6 +102,7 @@
 | M12 | SMOT-APP | Rimuovere codice morto `struct JobInput` in `lib.rs:102` | `src-tauri/src/lib.rs` |
 | M13 | SMOT-APP | Sostituire `reqwest::Client::new()` multipli con singleton | `indexing.rs:142`, `lib.rs:449`, `ollama.rs:25,49` |
 | M14 | HEXA-STUDIO | Persistere SECRET_KEY invece di rigenerare ad ogni restart | `app/core/config.py` |
+| M17 | HEXA-STUDIO | Aggiungere GitHub Actions per deploy automatico | `.github/workflows/` |
 
 ---
 
@@ -110,19 +110,19 @@
 
 ```
 FASE 1 (Critici)
-├── 🔵 Salvatore: S1 ✅, S2 ✅, S3 ✅, S4 ✅
-├── 🟢 Tommaso: T1, T2, T3, T4, T5, T6, T7, T8
+├── 🔵 Salvatore: S1 ✅, S2 ✅, S3 ✅, S4 ✅, S12 ✅, S13 ✅, S14 ✅
+├── 🟢 Tommaso: T1, T2, T6, T7, T8
 └── 🔴 Michele (ULTIMO): M1, M2, M3, M4, M5
 
 FASE 2 (Alti)
 ├── 🔵 Salvatore: S5 ✅, S6 ✅, S7 ✅, S8 ✅, S9 ✅
-├── 🟢 Tommaso: T9, T10, T11, T12, T13
-└── 🔴 Michele (ULTIMO): M6, M7, M8, M9, M10
+├── 🟢 Tommaso: T9, T10, T11
+└── 🔴 Michele (ULTIMO): M6, M7, M8, M9, M10, M15, M16
 
 FASE 3 (Bassi)
 ├── 🔵 Salvatore: S10 ✅, S11 ✅
-├── 🟢 Tommaso: T14, T15, T16, T17
-└── 🔴 Michele (ULTIMO): M11, M12, M13, M14
+├── 🟢 Tommaso: T14, T15, T16
+└── 🔴 Michele (ULTIMO): M11, M12, M13, M14, M17
 ```
 
 ---
@@ -142,7 +142,7 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 
 | Repo | Build | Lint/Tests | Sicurezza | Critici |
 |------|-------|-------------|-----------|---------|
-| HEXA-STUDIO | ✅ Frontend OK, ❌ Pytest (no DB) | ❌ ESLint mancante | ⚠️ Next.js CVE | 1 critical npm |
+| HEXA-STUDIO | ✅ Frontend OK (Next.js 16.2.6) + ✅ Backend OK (104 test) | ✅ ESLint + ✅ CI/CD | ✅ CVE risolte | 0 critici rimasti |
 | SMOT-APP | ✅ Build OK | ✅ 62 test OK, clippy clean | ✅ 0 vulnerabilità | ✅ Tauri build verificata (deb/rpm/AppImage) |
 | SMOT-Landing-page | ✅ Backend OK | ✅ TypeScript OK (1 warning pre-esistente) | ✅ CORS fix + env validation + Stripe check | 0 critici rimasti |
 | SMOT-CREATE | ❓ Non verificata | ❌ Zero test | ⚠️ CORS wildcard | Templates mancanti |
@@ -161,9 +161,9 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 | **FASE 1** | T7 — Env validation startup | ✅ Commit `e07445b` |
 | **FASE 1** | T8 — Stripe key runtime check | ✅ Commit `e07445b` |
 | **FASE 2** | T9 — Tauri build SMOT-APP | ✅ Commit `ce57fd3` |
-| **FASE 1** | T1-T5 — offline-smart-archive + HEXA-STUDIO | ⏳ Repo non trovate su GitHub |
-| **FASE 2** | T10-T13 — offline-smart-archive + HEXA-STUDIO | ⏳ Stesse repo mancanti |
-| **FASE 3** | T14-T17 | ⏳ Stesse repo mancanti |
+| **FASE 1** | T1-T2 — offline-smart-archive | ⏳ Repo non trovate su GitHub |
+| **FASE 2** | T10-T11 — offline-smart-archive | ⏳ Stesse repo mancanti |
+| **FASE 3** | T14-T16 — offline-smart-archive + smot | ⏳ Stesse repo mancanti |
 
 ### Dettaglio T6-T8 (SMOT-Landing-page)
 - **T6**: Rimosso fallback `|| '*'` in CORS, ora richiede `FRONTEND_URL` obbligatorio
@@ -194,6 +194,12 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 | **FASE 2** | S9 — Vitest + Playwright SMOT-Landing-page | ✅ Commit `d746106` |
 | **FASE 3** | S10 — Test accessibilità axe-core | ✅ Commit `d746106` |
 | **FASE 3** | S11 — SEO meta tags, sitemap, robots.txt | ✅ Commit `0546525` |
+| **FASE 1** | S12 — Next.js upgrade HEXA-STUDIO | ✅ Già su Next.js 16.2.6 |
+| **FASE 1** | S13 — ESLint frontend HEXA-STUDIO | ✅ Già installato |
+| **FASE 1** | S14 — CI/CD GitHub Actions HEXA-STUDIO | ✅ Già presente |
+| **FASE 3** | A21 — Fix TypeScript errors HEXA-STUDIO | ✅ 0 errori |
+| **FASE 3** | A22 — Fix build Next.js HEXA-STUDIO | ✅ Build verificata |
+| **FASE 3** | A23 — E2E Playwright tests HEXA-STUDIO | ✅ 5 spec file |
 
 ### Dettaglio FASE 1 (SMOT-Landing-page)
 - **S1**: Rimosso JWT_SECRET hardcoded `'dev-secret-change-me'` da `auth.ts`, ora usa `process.env.JWT_SECRET` con validazione
@@ -207,6 +213,16 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 - **S7**: Centralizzato import `@tauri-apps/api` in `services/tauri.ts` con dynamic import lazy
 - **S8**: Aggiunti 5 test E2E Playwright: `app.spec.ts`, `chat.spec.ts`, `navigation.spec.ts`, `onboarding.spec.ts`, `upload.spec.ts`
 - **S9**: Aggiunti 3 file Vitest (`App.test.tsx`, `AuthContext.test.tsx`, `api.test.ts`) + 4 test E2E Playwright + setup axe-core
+
+### Dettaglio FASE 1 (HEXA-STUDIO — ex Tommaso)
+- **S12**: `frontend/package.json` — Next.js già su `^16.2.6` (≥15.5.18 richiesto)
+- **S13**: ESLint già in `devDependencies` (`eslint ^10.3.0`), `.eslintrc.json` già presente
+- **S14**: CI/CD pipeline già in `.github/workflows/ci.yml` con lint, test, build, security scan, Docker deploy
+
+### Dettaglio Frontend HEXA-STUDIO (A21-A23)
+- **A21**: `npx tsc --noEmit` → **0 errori** TypeScript ✅
+- **A22**: Build Next.js verificata; rimosso `eslint: { ignoreDuringBuilds: true }` da `next.config.js` ✅
+- **A23**: 5 E2E spec Playwright (app, login, legal, media, profile); fix selectors e config path ✅
 
 ### Dettaglio FASE 3 (SMOT-Landing-page)
 - **S10**: Test accessibilità axe-core in `e2e/a11y.spec.ts` e `e2e/accessibility.spec.ts`
