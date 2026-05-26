@@ -28,8 +28,8 @@
 | S12 | HEXA-STUDIO | Upgrade Next.js ≥15.5.18 (CVE fix) | `frontend/package.json` | CRITICO | ✅ COMPLETATO |
 | S13 | HEXA-STUDIO | Installare ESLint nel frontend (`npm install --save-dev eslint`) | `frontend/` | ALTO | ✅ COMPLETATO |
 | S14 | HEXA-STUDIO | Creare GitHub Actions CI (lint + build + test) | `.github/workflows/` | MEDIO | ✅ COMPLETATO |
-| S20 | HEXA-STUDIO | Fix health check Redis — riusare connection pool invece di new connection per ogni `/health` | `backend/app/main.py:76-78` | ALTO | ⏳ |
-| S21 | HEXA-STUDIO | Aggiornare dipendenze Python datate (bcrypt, cryptography, certifi) | `requirements.txt` | MEDIO | ⏳ |
+| S20 | HEXA-STUDIO | Fix health check Redis — connection pool con auto-reconnect | `backend/app/core/redis_client.py` | ALTO | ✅ COMPLETATO |
+| S21 | HEXA-STUDIO | Aggiornare dipendenze Python datate (bcrypt, cryptography, certifi) | `requirements.txt` | MEDIO | ✅ COMPLETATO |
 
 ### 🟢 Tommaso — DevOps/Fullstack Critici
 | # | Repo | Task | File/Riferimento | Priorità |
@@ -86,8 +86,8 @@
 |---|------|------|------------------|-------|
 | S10 | SMOT-Landing-page | Aggiungere test accessibilità (axe-core) | root del progetto | ✅ COMPLETATO |
 | S11 | SMOT-Landing-page | SEO optimization (meta tags, sitemap, robots.txt) | root del progetto | ✅ COMPLETATO |
-| S22 | HEXA-STUDIO | Persistere SECRET_KEY invece di rigenerare ad ogni restart | `app/core/config.py` | ⏳ |
-| S23 | HEXA-STUDIO | Aggiungere GitHub Actions per deploy automatico | `.github/workflows/` | ⏳ |
+| S22 | HEXA-STUDIO | Persistere SECRET_KEY via `.secret` file | `app/core/config.py`, `.gitignore` | ✅ COMPLETATO |
+| S23 | HEXA-STUDIO | GitHub Actions deploy SSH + Docker Compose | `.github/workflows/ci.yml` | ✅ COMPLETATO |
 
 ### 🟢 Tommaso
 | # | Repo | Task | File/Riferimento |
@@ -109,7 +109,7 @@
 
 ```
 FASE 1 (Critici)
-├── 🔵 Salvatore: S1 ✅, S2 ✅, S3 ✅, S4 ✅, S12 ✅, S13 ✅, S14 ✅, S20 ⏳, S21 ⏳
+├── 🔵 Salvatore: S1 ✅, S2 ✅, S3 ✅, S4 ✅, S12 ✅, S13 ✅, S14 ✅, S20 ✅, S21 ✅
 ├── 🟢 Tommaso: T6 ✅, T7 ✅, T8 ✅
 └── 🔴 Michele (ULTIMO): M1, M2, M4 ✅, M5, M18, M19
 
@@ -119,7 +119,7 @@ FASE 2 (Alti)
 └── 🔴 Michele (ULTIMO): M6, M7, M8, M10, M20, M15 ✅, M16 ✅
 
 FASE 3 (Bassi)
-├── 🔵 Salvatore: S10 ✅, S11 ✅, S22 ⏳, S23 ⏳
+├── 🔵 Salvatore: S10 ✅, S11 ✅, S22 ✅, S23 ✅
 ├── 🟢 Tommaso: T15, T16
 └── 🔴 Michele (ULTIMO): M11, M12, M13, M21
 ```
@@ -218,10 +218,10 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 | **FASE 2** | A12 — Fix test_ai_chat HEXA-STUDIO | ✅ 4/4 |
 | **FASE 2** | A17 — Fix test_2fa HEXA-STUDIO | ✅ 6/6 |
 | **FASE 2** | A20 — Test OAuth HEXA-STUDIO | ✅ 8/8 |
-| **FASE 1** | S20 — Fix Redis connection pool HEXA-STUDIO | ⏳ |
-| **FASE 1** | S21 — Update Python deps HEXA-STUDIO | ⏳ |
-| **FASE 3** | S22 — Persistere SECRET_KEY HEXA-STUDIO | ⏳ |
-| **FASE 3** | S23 — GitHub Actions deploy HEXA-STUDIO | ⏳ |
+| **FASE 1** | S20 — Fix Redis connection pool HEXA-STUDIO | ✅ Commit `45aea2e` |
+| **FASE 1** | S21 — Update Python deps HEXA-STUDIO | ✅ Commit `45aea2e` |
+| **FASE 3** | S22 — Persistere SECRET_KEY HEXA-STUDIO | ✅ Commit `45aea2e` |
+| **FASE 3** | S23 — GitHub Actions deploy HEXA-STUDIO | ✅ Commit `45aea2e` |
 
 ### Dettaglio FASE 1 (SMOT-Landing-page)
 - **S1**: Rimosso JWT_SECRET hardcoded `'dev-secret-change-me'` da `auth.ts`, ora usa `process.env.JWT_SECRET` con validazione
@@ -251,6 +251,12 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 - **A12**: test_ai_chat.py — 4/4 test passati ✅
 - **A17**: test_2fa.py — 6/6 test passati ✅
 - **A20**: test_oauth.py — 8/8 test passati ✅ (Threads + Meta + LinkedIn + Twitter + TikTok)
+
+### Dettaglio Backend HEXA-STUDIO (S20-S23)
+- **S20**: `redis_client.py` — `get_redis()` ora verifica connessione con ping prima di riusare la pool; se morta, ricrea automaticamente
+- **S21**: `requirements.txt` — bcrypt 4.1.3 → 4.3.0; aggiunte cryptography 48.0.0 e certifi 2026.5.20 come dipendenze esplicite
+- **S22**: `config.py` — SECRET_KEY non generata più ad ogni restart; se non in .env, salva in `.secret` e rilegge ai restart successivi
+- **S23**: `ci.yml` — deploy job ora usa `appleboy/ssh-action` per SSH + docker compose pull/up; health check automatico post-deploy
 
 ### Dettaglio FASE 3 (SMOT-Landing-page)
 - **S10**: Test accessibilità axe-core in `e2e/a11y.spec.ts` e `e2e/accessibility.spec.ts`
