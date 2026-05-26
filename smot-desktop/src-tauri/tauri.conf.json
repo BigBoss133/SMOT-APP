@@ -48,7 +48,6 @@
         "displayLanguageSelector": true,
         "installerIcon": "icons/icon.ico",
         "headerImage": "assets/installer/installer-header.bmp",
-        "sidebarImage": "assets/installer/installer-welcome.bmp",
         "startMenuFolder": "SMOT"
       },
       "wix": {
