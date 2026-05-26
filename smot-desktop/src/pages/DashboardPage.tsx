@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText } from "lucide-react";
 import { HardwareModeSelector } from "../components/HardwareModeSelector";
@@ -15,7 +15,7 @@ interface DashboardPageProps {
   onModeChange: (mode: string) => void;
 }
 
-export default function DashboardPage({
+function DashboardPage({
   documents, modeData, onModeChange,
 }: DashboardPageProps) {
   const navigate = useNavigate();
@@ -28,14 +28,15 @@ export default function DashboardPage({
     return () => clearTimeout(timer);
   }, []);
 
-  const indexedCount = documents.filter((doc) => doc.indexed).length;
-  const totalSize = documents.reduce((sum, doc) => sum + doc.size_kb, 0) / 1024;
+  // ⚡ Bolt: Memoize heavy array operations to prevent recalculation during 5s polling interval
+  const indexedCount = useMemo(() => documents.filter((doc) => doc.indexed).length, [documents]);
+  const totalSize = useMemo(() => documents.reduce((sum, doc) => sum + doc.size_kb, 0) / 1024, [documents]);
 
-  const stats = [
+  const stats = useMemo(() => [
     { label: "Documenti totali", value: String(documents.length), testId: "stat-total-documents" },
     { label: "Indicizzati",      value: String(indexedCount),      testId: "stat-indexed-documents" },
     { label: "Spazio totale",    value: `${totalSize.toFixed(2)} GB`, testId: "stat-total-storage" },
-  ];
+  ], [documents.length, indexedCount, totalSize]);
   const visible = useStaggerAnimation(stats.length, 120);
 
   return (
@@ -138,3 +139,5 @@ export default function DashboardPage({
     </div>
   );
 }
+// ⚡ Bolt: Memoize the entire component to prevent re-renders cascading from App.tsx system status polling
+export default memo(DashboardPage);
