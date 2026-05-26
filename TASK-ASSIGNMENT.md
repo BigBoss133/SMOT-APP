@@ -218,7 +218,7 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 - **S8**: Aggiunti 5 test E2E Playwright: `app.spec.ts`, `chat.spec.ts`, `navigation.spec.ts`, `onboarding.spec.ts`, `upload.spec.ts`
 - **S9**: Aggiunti 3 file Vitest (`App.test.tsx`, `AuthContext.test.tsx`, `api.test.ts`) + 4 test E2E Playwright + setup axe-core
 
-### Dettaglio FASE 1 (HEXA-STUDIO — ex Tommaso)
+### Dettaglio FASE 1 (HEXA-STUDIO — Frontend)
 - **S12**: `frontend/package.json` — Next.js già su `^16.2.6` (≥15.5.18 richiesto)
 - **S13**: ESLint già in `devDependencies` (`eslint ^10.3.0`), `.eslintrc.json` già presente
 - **S14**: CI/CD pipeline già in `.github/workflows/ci.yml` con lint, test, build, security scan, Docker deploy
