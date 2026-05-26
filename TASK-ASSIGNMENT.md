@@ -10,7 +10,7 @@
 
 | Ruolo | Persona | Focus |
 |-------|---------|-------|
-| 🔵 Frontend/UX + Backend HEXA-STUDIO | Salvatore | UI, React, componenti, accessibility, animazioni + task backend HEXA-STUDIO |
+| 🔵 Frontend/UX | Salvatore | UI, React, componenti, accessibility, animazioni |
 | 🟢 DevOps (SOLO SMOT) | Tommaso | Infrastruttura CI/CD, sicurezza, build — solo repo SMOT |
 | 🔴 Backend + offline-smart-archive | Michele (ULTIMO) | API, database, logica server, sicurezza backend + repo offline-smart-archive |
 
@@ -129,7 +129,7 @@ FASE 3 (Bassi)
 ## Come Leggere i Task
 
 Ogni task ha un codice:
-- **S** = Salvatore (Frontend/UX + Backend HEXA-STUDIO)
+- **S** = Salvatore (Frontend/UX)
 - **T** = Tommaso (DevOps — solo SMOT)  
 - **M** = Michele (Backend + offline-smart-archive) — **SEMPRE PER ULTIMO**
 
@@ -141,7 +141,7 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 
 | Repo | Build | Lint/Tests | Sicurezza | Critici |
 |------|-------|-------------|-----------|---------|
-| HEXA-STUDIO | ✅ Frontend OK (Next.js 16.2.6) + ✅ Backend OK (104 test) | ✅ ESLint + ✅ CI/CD | ✅ CVE risolte | 0 critici rimasti |
+| HEXA-STUDIO | ✅ Frontend OK (Next.js 16.2.6) + ✅ Backend OK (104 test) | ✅ ESLint + ✅ CI/CD + ✅ Deploy auto | ✅ CVE risolte | 0 critici rimasti |
 | SMOT-APP | ✅ Build OK | ✅ 62 test OK, clippy clean | ✅ 0 vulnerabilità | ✅ Tauri build verificata (deb/rpm/AppImage) |
 | SMOT-Landing-page | ✅ Backend OK | ✅ TypeScript OK (1 warning pre-esistente) | ✅ CORS fix + env validation + Stripe check | 0 critici rimasti |
 | SMOT-CREATE | ❓ Non verificata | ❌ Zero test | ⚠️ CORS wildcard | Templates mancanti |
