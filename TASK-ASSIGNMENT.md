@@ -1,7 +1,7 @@
 # TASK-ASSIGNMENT.md — Piano di Lavoro 3 Persone
 
-> **Data:** 13 Maggio 2026 (ultimo aggiornamento: 2026-05-13 23:00)  
-> **Team:** Salvatore (Frontend/UX) · Tommaso (DevOps/Fullstack) · Michele (Backend)  
+> **Data:** 26 Maggio 2026 (ultimo aggiornamento: 2026-05-26)  
+> **Team:** Salvatore (Frontend/UX + offline-smart-archive) · Tommaso (DevOps — SOLO SMOT) · Michele (Backend)  
 > **Regola:** Il lavoro di **Michele viene svolto per ULTIMO**
 
 ---
@@ -10,8 +10,8 @@
 
 | Ruolo | Persona | Focus |
 |-------|---------|-------|
-| 🔵 Frontend/UX | Salvatore | UI, React, componenti, accessibility, animazioni |
-| 🟢 DevOps/Fullstack | Tommaso | Infrastruttura, CI/CD, sicurezza, build, config |
+| 🔵 Frontend/UX + offline-smart-archive | Salvatore | UI, React, componenti, accessibility, animazioni + repo offline-smart-archive |
+| 🟢 DevOps (SOLO SMOT) | Tommaso | Infrastruttura CI/CD, sicurezza, build — solo repo SMOT |
 | 🔴 Backend | Michele (ULTIMO) | API, database, logica server, sicurezza backend |
 
 ---
@@ -28,12 +28,12 @@
 | S12 | HEXA-STUDIO | Upgrade Next.js ≥15.5.18 (CVE fix) | `frontend/package.json` | CRITICO | ✅ COMPLETATO |
 | S13 | HEXA-STUDIO | Installare ESLint nel frontend (`npm install --save-dev eslint`) | `frontend/` | ALTO | ✅ COMPLETATO |
 | S14 | HEXA-STUDIO | Creare GitHub Actions CI (lint + build + test) | `.github/workflows/` | MEDIO | ✅ COMPLETATO |
+| S15 | offline-smart-archive | Fix PostCSS config → installare `@tailwindcss/postcss` e aggiornare `postcss.config.js` | `postcss.config.js` | CRITICO | ⏳ ASSEGNATO |
+| S16 | offline-smart-archive | Cambiare `debug = False` come default | `backend/core/config.py:8` | ALTO | ⏳ ASSEGNATO |
 
 ### 🟢 Tommaso — DevOps/Fullstack Critici
 | # | Repo | Task | File/Riferimento | Priorità |
 |---|------|------|------------------|----------|
-| T1 | offline-smart-archive | Fix PostCSS config → installare `@tailwindcss/postcss` e aggiornare `postcss.config.js` | `postcss.config.js` | CRITICO |
-| T2 | offline-smart-archive | Cambiare `debug = False` come default | `backend/core/config.py:8` | ALTO |
 | T6 | SMOT-Landing-page | Fix CORS wildcard → limitare ai domini autorizzati | `backend/src/index.ts:15` | ✅ COMPLETATO |
 | T7 | SMOT-Landing-page | Aggiungere validazione env var a startup | `backend/src/index.ts` | ✅ COMPLETATO |
 | T8 | SMOT-Landing-page | Validare STRIPE_SECRET_KEY a runtime | `backend/src/routes/payments.ts:7` | ✅ COMPLETATO |
@@ -59,13 +59,13 @@
 | S7 | SMOT-APP | Fix dynamic import warning per `@tauri-apps/api` | `src/App.tsx`, `src/pages/LicenseBlockedPage.tsx` | MEDIO | ✅ COMPLETATO |
 | S8 | SMOT-APP | Aggiungere test E2E Playwright | `e2e/` o `tests/` | MEDIO | ✅ COMPLETATO |
 | S9 | SMOT-Landing-page | Aggiungere test (Vitest per unit, Playwright per E2E) | root del progetto | ALTO | ✅ COMPLETATO |
+| S17 | offline-smart-archive | Aggiungere `.env.example` con tutte le variabili necessarie | root del progetto | MEDIO | ⏳ ASSEGNATO |
+| S18 | offline-smart-archive | Fix generic exception handling → eccezioni specifiche | `backend/services/llm.py:75`, `model_manager.py:107` | MEDIO | ⏳ ASSEGNATO |
 
 ### 🟢 Tommaso
 | # | Repo | Task | File/Riferimento | Priorità |
 |---|------|------|------------------|----------|
 | T9 | SMOT-APP | Verificare Tauri build (`npm run tauri build`) con Rust toolchain | `src-tauri/` | ✅ COMPLETATO |
-| T10 | offline-smart-archive | Aggiungere `.env.example` con tutte le variabili necessarie | root del progetto | MEDIO |
-| T11 | offline-smart-archive | Fix generic exception handling → eccezioni specifiche | `backend/services/llm.py:75`, `model_manager.py:107` | MEDIO |
 
 ### 🔴 Michele (ULTIMO)
 | # | Repo | Task | File/Riferimento | Priorità |
@@ -87,11 +87,11 @@
 |---|------|------|------------------|-------|
 | S10 | SMOT-Landing-page | Aggiungere test accessibilità (axe-core) | root del progetto | ✅ COMPLETATO |
 | S11 | SMOT-Landing-page | SEO optimization (meta tags, sitemap, robots.txt) | root del progetto | ✅ COMPLETATO |
+| S19 | offline-smart-archive | Rinominare progetto in `pyproject.toml` per coerenza | `pyproject.toml:3` | ⏳ ASSEGNATO |
 
 ### 🟢 Tommaso
 | # | Repo | Task | File/Riferimento |
 |---|------|------|------------------|
-| T14 | offline-smart-archive | Rinominare progetto in `pyproject.toml` per coerenza | `pyproject.toml:3` |
 | T15 | smot | Aggiungere `asyncio_default_fixture_loop_scope = "function"` | `pyproject.toml` |
 | T16 | smot | Rimuovere `filterwarnings = ["ignore::DeprecationWarning"]` globale | `pyproject.toml:84-86` |
 
@@ -110,18 +110,18 @@
 
 ```
 FASE 1 (Critici)
-├── 🔵 Salvatore: S1 ✅, S2 ✅, S3 ✅, S4 ✅, S12 ✅, S13 ✅, S14 ✅
-├── 🟢 Tommaso: T1, T2, T6, T7, T8
+├── 🔵 Salvatore: S1 ✅, S2 ✅, S3 ✅, S4 ✅, S12 ✅, S13 ✅, S14 ✅, S15 ⏳, S16 ⏳
+├── 🟢 Tommaso: T6 ✅, T7 ✅, T8 ✅
 └── 🔴 Michele (ULTIMO): M1, M2, M3, M4, M5
 
 FASE 2 (Alti)
-├── 🔵 Salvatore: S5 ✅, S6 ✅, S7 ✅, S8 ✅, S9 ✅
-├── 🟢 Tommaso: T9, T10, T11
-└── 🔴 Michele (ULTIMO): M6, M7, M8, M9, M10, M15, M16
+├── 🔵 Salvatore: S5 ✅, S6 ✅, S7 ✅, S8 ✅, S9 ✅, S17 ⏳, S18 ⏳
+├── 🟢 Tommaso: T9 ✅
+└── 🔴 Michele (ULTIMO): M6, M7, M8, M9, M10, M15 ✅, M16 ✅
 
 FASE 3 (Bassi)
-├── 🔵 Salvatore: S10 ✅, S11 ✅
-├── 🟢 Tommaso: T14, T15, T16
+├── 🔵 Salvatore: S10 ✅, S11 ✅, S19 ⏳
+├── 🟢 Tommaso: T15, T16
 └── 🔴 Michele (ULTIMO): M11, M12, M13, M14, M17
 ```
 
@@ -161,9 +161,8 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 | **FASE 1** | T7 — Env validation startup | ✅ Commit `e07445b` |
 | **FASE 1** | T8 — Stripe key runtime check | ✅ Commit `e07445b` |
 | **FASE 2** | T9 — Tauri build SMOT-APP | ✅ Commit `ce57fd3` |
-| **FASE 1** | T1-T2 — offline-smart-archive | ⏳ Repo non trovate su GitHub |
-| **FASE 2** | T10-T11 — offline-smart-archive | ⏳ Stesse repo mancanti |
-| **FASE 3** | T14-T16 — offline-smart-archive + smot | ⏳ Stesse repo mancanti |
+| **FASE 3** | T15 — Fix asyncio fixture scope smot | ⏳ |
+| **FASE 3** | T16 — Remove global DeprecationWarning filter smot | ⏳ |
 
 ### Dettaglio T6-T8 (SMOT-Landing-page)
 - **T6**: Rimosso fallback `|| '*'` in CORS, ora richiede `FRONTEND_URL` obbligatorio
@@ -200,6 +199,11 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 | **FASE 3** | A21 — Fix TypeScript errors HEXA-STUDIO | ✅ 0 errori |
 | **FASE 3** | A22 — Fix build Next.js HEXA-STUDIO | ✅ Build verificata |
 | **FASE 3** | A23 — E2E Playwright tests HEXA-STUDIO | ✅ 5 spec file |
+| **FASE 1** | S15 — Fix PostCSS offline-smart-archive | ⏳ Repo non trovata su GitHub |
+| **FASE 1** | S16 — debug=False default offline-smart-archive | ⏳ Stessa repo mancante |
+| **FASE 2** | S17 — .env.example offline-smart-archive | ⏳ Stessa repo mancante |
+| **FASE 2** | S18 — Fix exception handling offline-smart-archive | ⏳ Stessa repo mancante |
+| **FASE 3** | S19 — Rename pyproject.toml offline-smart-archive | ⏳ Stessa repo mancante |
 | **FASE 2** | M4 — SQLite fallback test DB HEXA-STUDIO | ✅ Auto-detection |
 | **FASE 2** | A12 — Fix test_ai_chat HEXA-STUDIO | ✅ 4/4 |
 | **FASE 2** | A17 — Fix test_2fa HEXA-STUDIO | ✅ 6/6 |
