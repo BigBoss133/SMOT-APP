@@ -10,7 +10,7 @@
 
 | Ruolo | Persona | Focus |
 |-------|---------|-------|
-| 🔵 Frontend/UX | Salvatore | UI, React, componenti, accessibility, animazioni |
+| 🔵 Frontend/UX + Backend HEXA-STUDIO | Salvatore | UI, React, componenti, accessibility, animazioni + task backend HEXA-STUDIO |
 | 🟢 DevOps (SOLO SMOT) | Tommaso | Infrastruttura CI/CD, sicurezza, build — solo repo SMOT |
 | 🔴 Backend + offline-smart-archive | Michele (ULTIMO) | API, database, logica server, sicurezza backend + repo offline-smart-archive |
 
@@ -28,6 +28,8 @@
 | S12 | HEXA-STUDIO | Upgrade Next.js ≥15.5.18 (CVE fix) | `frontend/package.json` | CRITICO | ✅ COMPLETATO |
 | S13 | HEXA-STUDIO | Installare ESLint nel frontend (`npm install --save-dev eslint`) | `frontend/` | ALTO | ✅ COMPLETATO |
 | S14 | HEXA-STUDIO | Creare GitHub Actions CI (lint + build + test) | `.github/workflows/` | MEDIO | ✅ COMPLETATO |
+| S20 | HEXA-STUDIO | Fix health check Redis — riusare connection pool invece di new connection per ogni `/health` | `backend/app/main.py:76-78` | ALTO | ⏳ |
+| S21 | HEXA-STUDIO | Aggiornare dipendenze Python datate (bcrypt, cryptography, certifi) | `requirements.txt` | MEDIO | ⏳ |
 
 ### 🟢 Tommaso — DevOps/Fullstack Critici
 | # | Repo | Task | File/Riferimento | Priorità |
@@ -41,8 +43,7 @@
 |---|------|------|------------------|----------|
 | M1 | SMOT-CREATE | Creare directory `templates/` o rimuovere riferimento | `services/generator.py:45` | CRITICO |
 | M2 | SMOT-CREATE | Fix CORS wildcard → limitare ai domini autorizzati | `main.py:21` | CRITICO |
-| M3 | HEXA-STUDIO | Fix health check Redis — riusare connection pool invece di new connection per ogni `/health` | `backend/app/main.py:76-78` | ALTO |
-| M4 | HEXA-STUDIO | Aggiungere test con DB mock (pytest fallisce per ConnectionRefused) | `backend/tests/` | ALTO |
+| M4 | HEXA-STUDIO | Aggiungere test con DB mock (pytest fallisce per ConnectionRefused) | `backend/tests/` | ALTO | ✅ COMPLETATO |
 | M5 | SMOT-CREATE | Aggiungere rate limiting su `/api/v1/generate` | `main.py` | MEDIO |
 | M18 | offline-smart-archive | Fix PostCSS config → installare `@tailwindcss/postcss` e aggiornare `postcss.config.js` | `postcss.config.js` | CRITICO |
 | M19 | offline-smart-archive | Cambiare `debug = False` come default | `backend/core/config.py:8` | ALTO |
@@ -71,7 +72,6 @@
 | M6 | SMOT-CREATE | Validazione `extra_data` schema — aggiungere validazione Pydantic | `schemas.py:103` | MEDIO |
 | M7 | SMOT-CREATE | Sostituire `shutil.rmtree()` silenzioso con cleanup sicuro | `services/zip_service.py:41` | MEDIO |
 | M8 | SMOT-CREATE | Aggiungere test (pytest + httpx AsyncClient) | root del progetto | MEDIO |
-| M9 | HEXA-STUDIO | Aggiornare dipendenze Python datate (bcrypt, cryptography, certifi) | `requirements.txt` | MEDIO |
 | M10 | offline-smart-archive | Sostituire `except Exception` con eccezioni specifiche | `backend/services/llm.py:75`, `model_manager.py:107`, `backend/services/` | BASSO |
 | M20 | offline-smart-archive | Aggiungere `.env.example` con tutte le variabili necessarie | root del progetto | MEDIO |
 | M15 | HEXA-STUDIO | Aggiungere `.env.example` con password sicure per produzione | `backend/.env.example` | ✅ COMPLETATO |
@@ -86,6 +86,8 @@
 |---|------|------|------------------|-------|
 | S10 | SMOT-Landing-page | Aggiungere test accessibilità (axe-core) | root del progetto | ✅ COMPLETATO |
 | S11 | SMOT-Landing-page | SEO optimization (meta tags, sitemap, robots.txt) | root del progetto | ✅ COMPLETATO |
+| S22 | HEXA-STUDIO | Persistere SECRET_KEY invece di rigenerare ad ogni restart | `app/core/config.py` | ⏳ |
+| S23 | HEXA-STUDIO | Aggiungere GitHub Actions per deploy automatico | `.github/workflows/` | ⏳ |
 
 ### 🟢 Tommaso
 | # | Repo | Task | File/Riferimento |
@@ -99,8 +101,6 @@
 | M11 | SMOT-CREATE | Rimuovere re-export inutile in `generator.py:1` | `generator.py` |
 | M12 | SMOT-APP | Rimuovere codice morto `struct JobInput` in `lib.rs:102` | `src-tauri/src/lib.rs` |
 | M13 | SMOT-APP | Sostituire `reqwest::Client::new()` multipli con singleton | `indexing.rs:142`, `lib.rs:449`, `ollama.rs:25,49` |
-| M14 | HEXA-STUDIO | Persistere SECRET_KEY invece di rigenerare ad ogni restart | `app/core/config.py` |
-| M17 | HEXA-STUDIO | Aggiungere GitHub Actions per deploy automatico | `.github/workflows/` |
 | M21 | offline-smart-archive | Rinominare progetto in `pyproject.toml` per coerenza | `pyproject.toml:3` |
 
 ---
@@ -109,19 +109,19 @@
 
 ```
 FASE 1 (Critici)
-├── 🔵 Salvatore: S1 ✅, S2 ✅, S3 ✅, S4 ✅, S12 ✅, S13 ✅, S14 ✅
+├── 🔵 Salvatore: S1 ✅, S2 ✅, S3 ✅, S4 ✅, S12 ✅, S13 ✅, S14 ✅, S20 ⏳, S21 ⏳
 ├── 🟢 Tommaso: T6 ✅, T7 ✅, T8 ✅
-└── 🔴 Michele (ULTIMO): M1, M2, M3, M4, M5, M18, M19
+└── 🔴 Michele (ULTIMO): M1, M2, M4 ✅, M5, M18, M19
 
 FASE 2 (Alti)
 ├── 🔵 Salvatore: S5 ✅, S6 ✅, S7 ✅, S8 ✅, S9 ✅
 ├── 🟢 Tommaso: T9 ✅
-└── 🔴 Michele (ULTIMO): M6, M7, M8, M9, M10, M20, M15 ✅, M16 ✅
+└── 🔴 Michele (ULTIMO): M6, M7, M8, M10, M20, M15 ✅, M16 ✅
 
 FASE 3 (Bassi)
-├── 🔵 Salvatore: S10 ✅, S11 ✅
+├── 🔵 Salvatore: S10 ✅, S11 ✅, S22 ⏳, S23 ⏳
 ├── 🟢 Tommaso: T15, T16
-└── 🔴 Michele (ULTIMO): M11, M12, M13, M14, M17, M21
+└── 🔴 Michele (ULTIMO): M11, M12, M13, M21
 ```
 
 ---
@@ -129,7 +129,7 @@ FASE 3 (Bassi)
 ## Come Leggere i Task
 
 Ogni task ha un codice:
-- **S** = Salvatore (Frontend/UX)
+- **S** = Salvatore (Frontend/UX + Backend HEXA-STUDIO)
 - **T** = Tommaso (DevOps — solo SMOT)  
 - **M** = Michele (Backend + offline-smart-archive) — **SEMPRE PER ULTIMO**
 
@@ -177,14 +177,18 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 
 ---
 
-## Progresso Michele (offline-smart-archive)
+## Progresso Michele (offline-smart-archive + SMOT-CREATE)
 
 | Fase | Task | Stato |
 |------|------|:-----:|
+| **FASE 1** | M1-M2 — SMOT-CREATE templates/CORS | ⏳ |
+| **FASE 1** | M5 — SMOT-CREATE rate limiting | ⏳ |
 | **FASE 1** | M18 — Fix PostCSS offline-smart-archive | ⏳ Solo Michele può operare (repo privata) |
 | **FASE 1** | M19 — debug=False default offline-smart-archive | ⏳ Solo Michele può operare |
-| **FASE 2** | M10 — Fix exception handling offline-smart-archive | ⏳ Merged con S18 (llm.py + model_manager.py) |
+| **FASE 2** | M6-M8 — SMOT-CREATE validation/cleanup/test | ⏳ |
+| **FASE 2** | M10 — Fix exception handling offline-smart-archive | ⏳ |
 | **FASE 2** | M20 — .env.example offline-smart-archive | ⏳ Solo Michele può operare |
+| **FASE 3** | M11-M13 — SMOT-CREATE/SMOT-APP | ⏳ |
 | **FASE 3** | M21 — Rename pyproject.toml offline-smart-archive | ⏳ Solo Michele può operare |
 
 ---
@@ -214,6 +218,10 @@ Ogni task referencia file e righe specifiche. Controllare il file `AUDIT-2026-05
 | **FASE 2** | A12 — Fix test_ai_chat HEXA-STUDIO | ✅ 4/4 |
 | **FASE 2** | A17 — Fix test_2fa HEXA-STUDIO | ✅ 6/6 |
 | **FASE 2** | A20 — Test OAuth HEXA-STUDIO | ✅ 8/8 |
+| **FASE 1** | S20 — Fix Redis connection pool HEXA-STUDIO | ⏳ |
+| **FASE 1** | S21 — Update Python deps HEXA-STUDIO | ⏳ |
+| **FASE 3** | S22 — Persistere SECRET_KEY HEXA-STUDIO | ⏳ |
+| **FASE 3** | S23 — GitHub Actions deploy HEXA-STUDIO | ⏳ |
 
 ### Dettaglio FASE 1 (SMOT-Landing-page)
 - **S1**: Rimosso JWT_SECRET hardcoded `'dev-secret-change-me'` da `auth.ts`, ora usa `process.env.JWT_SECRET` con validazione
